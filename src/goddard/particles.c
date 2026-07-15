@@ -225,7 +225,7 @@ struct ObjParticle *make_particle(u32 flags, s32 colourNum, f32 x, f32 y, f32 z)
 
 /* 230DCC -> 230F48 */
 struct Connection *make_connection(struct ObjVertex *vtx1, struct ObjVertex *vtx2) {
-    struct Connection *conn = gd_malloc_perm(sizeof(struct Connection));
+    struct Connection *conn = (struct Connection *) gd_malloc_perm(sizeof(struct Connection));
     struct GdVec3f sp28;
     struct GdVec3f sp1C;
 

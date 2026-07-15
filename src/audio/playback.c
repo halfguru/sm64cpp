@@ -1128,7 +1128,7 @@ struct Note *pop_node_with_lower_prio(struct AudioListItem *list, s32 limit) {
 #ifndef VERSION_SH
     audio_list_remove(best);
 #endif
-    return best->u.value;
+    return (struct Note *) best->u.value;
 }
 
 #if defined(VERSION_EU) || defined(VERSION_SH)

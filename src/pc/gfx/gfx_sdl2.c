@@ -215,7 +215,7 @@ static void gfx_sdl_init(const char *game_name, bool start_in_fullscreen) {
     }
 
     if (configMouseCam) {
-        SDL_SetRelativeMouseMode(true);
+        SDL_SetRelativeMouseMode(SDL_TRUE);
         relative_mouse_mode_on = true;
     }
 
@@ -295,11 +295,11 @@ static void gfx_sdl_main_loop(void (*run_one_game_iter)(void)) {
         if (configMouseCam) {
             bool want = (SDL_GetWindowFlags(wnd) & SDL_WINDOW_INPUT_FOCUS) == SDL_WINDOW_INPUT_FOCUS;
             if (want != relative_mouse_mode_on) {
-                SDL_SetRelativeMouseMode(want);
+                SDL_SetRelativeMouseMode((SDL_bool) want);
                 relative_mouse_mode_on = want;
             }
         } else if (relative_mouse_mode_on) {
-            SDL_SetRelativeMouseMode(false);
+            SDL_SetRelativeMouseMode(SDL_FALSE);
             relative_mouse_mode_on = false;
         }
     }
@@ -336,7 +336,7 @@ static void gfx_sdl_onkeyup(int scancode) {
 
 static void gfx_sdl_handle_events(void) {
     SDL_Event event;
-    Uint8 *state = SDL_GetKeyboardState(NULL);
+    const Uint8 *state = SDL_GetKeyboardState(NULL);
     on_mouse_move_callback(0, 0);
     while (SDL_PollEvent(&event)) {
         switch (event.type) {

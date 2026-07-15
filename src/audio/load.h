@@ -79,9 +79,9 @@ extern struct UnkStructSH8034EC88 D_SH_8034EC88[0x80];
 void audio_dma_partial_copy_async(uintptr_t *devAddr, u8 **vAddr, ssize_t *remaining, OSMesgQueue *queue, OSIoMesg *mesg);
 void decrease_sample_dma_ttls(void);
 #ifdef VERSION_SH
-void *dma_sample_data(uintptr_t devAddr, u32 size, s32 arg2, u8 *dmaIndexRef, s32 medium);
+SOUND_ALLOC_RETURN_TYPE dma_sample_data(uintptr_t devAddr, u32 size, s32 arg2, u8 *dmaIndexRef, s32 medium);
 #else
-void *dma_sample_data(uintptr_t devAddr, u32 size, s32 arg2, u8 *dmaIndexRef);
+SOUND_ALLOC_RETURN_TYPE dma_sample_data(uintptr_t devAddr, u32 size, s32 arg2, u8 *dmaIndexRef);
 #endif
 void init_sample_dma_buffers(s32 arg0);
 #if defined(VERSION_SH)

@@ -83,3 +83,8 @@ sm64config.txt
 .idea/modules.xml
 .idea/sm64-port.iml
 .idea/vcs.xml
+
+# Project build & reference folders
+build_cmake/
+src/generated/
+/references/

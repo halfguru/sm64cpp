@@ -823,7 +823,7 @@ void load_object_collision_model(void) {
     UNUSED s32 unused;
     s16 vertexData[600];
 
-    s16 *collisionData = gCurrentObject->collisionData;
+    s16 *collisionData = (s16 *) gCurrentObject->collisionData;
     f32 marioDist = gCurrentObject->oDistanceToMario;
     f32 tangibleDist = gCurrentObject->oCollisionDistance;
 

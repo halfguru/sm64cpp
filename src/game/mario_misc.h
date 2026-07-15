@@ -9,6 +9,10 @@
 extern struct GraphNodeObject gMirrorMario;
 extern struct MarioBodyState gBodyStates[2];
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 Gfx *geo_draw_mario_head_goddard(s32 callContext, struct GraphNode *node, Mat4 *c);
 void bhv_toad_message_loop(void);
 void bhv_toad_message_init(void);
@@ -27,5 +31,9 @@ Gfx *geo_mario_rotate_wing_cap_wings(s32 callContext, struct GraphNode *node, UN
 Gfx *geo_switch_mario_hand_grab_pos(s32 callContext, struct GraphNode *b, Mat4 *mtx);
 Gfx *geo_render_mirror_mario(s32 callContext, struct GraphNode *node, UNUSED Mat4 *c);
 Gfx *geo_mirror_mario_backface_culling(s32 callContext, struct GraphNode *node, UNUSED Mat4 *c);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MARIO_MISC_H

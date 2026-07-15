@@ -2,6 +2,7 @@
 #include <ultra64.h>
 
 #include "controller_api.h"
+#include "controller_keyboard.h"
 
 #ifdef TARGET_WEB
 #include "controller_emscripten_keyboard.h"

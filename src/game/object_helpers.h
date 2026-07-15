@@ -6,6 +6,10 @@
 #include "macros.h"
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // used for chain chomp and wiggler
 struct ChainSegment
 {
@@ -300,6 +304,10 @@ void cur_obj_spawn_loot_blue_coin(void);
 
 #ifndef VERSION_JP
 void cur_obj_spawn_star_at_y_offset(f32 targetX, f32 targetY, f32 targetZ, f32 offsetY);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif // OBJECT_HELPERS_H

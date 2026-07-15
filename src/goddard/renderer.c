@@ -1362,7 +1362,7 @@ Gfx *gdm_gettestdl(s32 id) {
             //! @bug Code treats `sYoshiSceneView` as group; not called in game though
             apply_to_obj_types_in_group(OBJ_TYPE_VIEWS, (applyproc_t) update_view,
                                         (struct ObjGroup *) sYoshiSceneView);
-            dobj = d_use_obj("yoshi_scene");
+            dobj = d_use_obj((DynObjName) "yoshi_scene");
             gddl = sGdDLArray[((struct ObjView *) dobj)->gdDlNum];
             sUpdateYoshiScene = TRUE;
             break;
@@ -1370,7 +1370,7 @@ Gfx *gdm_gettestdl(s32 id) {
             if (sYoshiSceneGrp == NULL) {
                 fatal_printf("gdm_gettestdl(): DL number %d undefined", id);
             }
-            dobj = d_use_obj("yoshi_sh_l1");
+            dobj = d_use_obj((DynObjName) "yoshi_sh_l1");
             gddl = sGdDLArray[((struct ObjShape *) dobj)->dlNums[gGdFrameBufNum]];
             sUpdateYoshiScene = TRUE;
             break;
@@ -1393,14 +1393,14 @@ Gfx *gdm_gettestdl(s32 id) {
             //! @bug Code treats `sCarSceneView` as group; not called in game though
             apply_to_obj_types_in_group(OBJ_TYPE_VIEWS, (applyproc_t) update_view,
                                         (struct ObjGroup *) sCarSceneView);
-            dobj = d_use_obj("car_scene");
+            dobj = d_use_obj((DynObjName) "car_scene");
             gddl = sGdDLArray[((struct ObjView *) dobj)->gdDlNum];
             sUpdateCarScene = TRUE;
             break;
         case 5:
             sActiveView = sScreenView;
             set_gd_mtx_parameters(G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_PUSH);
-            dobj = d_use_obj("testnet2");
+            dobj = d_use_obj((DynObjName) "testnet2");
             sCarGdDlNum = gd_startdisplist(8);
 
             if (sCarGdDlNum == 0) {
@@ -1419,7 +1419,7 @@ Gfx *gdm_gettestdl(s32 id) {
         fatal_printf("no display list");
     }
     stop_timer("dlgen");
-    return (void *) osVirtualToPhysical(gddl->gfx);
+    return (Gfx *) osVirtualToPhysical(gddl->gfx);
 }
 
 /* 24B418 -> 24B4CC; not called */
@@ -1428,7 +1428,7 @@ void gdm_getpos(s32 id, struct GdVec3f *dst) {
     switch (id) {
         case 5:
             set_gd_mtx_parameters(G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_PUSH);
-            dobj = d_use_obj("testnet2");
+            dobj = d_use_obj((DynObjName) "testnet2");
             dst->x = ((struct ObjNet *) dobj)->worldPos.x;
             dst->y = ((struct ObjNet *) dobj)->worldPos.y;
             dst->z = ((struct ObjNet *) dobj)->worldPos.z;
@@ -1467,7 +1467,7 @@ void fatal_no_dl_mem(void) {
 struct GdDisplayList *alloc_displaylist(u32 id) {
     struct GdDisplayList *gdDl;
 
-    gdDl = gd_malloc_perm(sizeof(struct GdDisplayList));
+    gdDl = (struct GdDisplayList *) gd_malloc_perm(sizeof(struct GdDisplayList));
     if (gdDl == NULL) {
         fatal_no_dl_mem();
     }
@@ -1527,7 +1527,7 @@ struct GdDisplayList *new_gd_dl(s32 id, s32 gfxs, s32 verts, s32 mtxs, s32 light
     }
     dl->curVtxIdx = 0;
     dl->totalVtx = verts;
-    if ((dl->vtx = gd_malloc_perm(verts * sizeof(Vtx))) == NULL) {
+    if ((dl->vtx = (Vtx *) gd_malloc_perm(verts * sizeof(Vtx))) == NULL) {
         fatal_no_dl_mem();
     }
 
@@ -1536,7 +1536,7 @@ struct GdDisplayList *new_gd_dl(s32 id, s32 gfxs, s32 verts, s32 mtxs, s32 light
     }
     dl->curMtxIdx = 0;
     dl->totalMtx = mtxs;
-    if ((dl->mtx = gd_malloc_perm(mtxs * sizeof(Mtx))) == NULL) {
+    if ((dl->mtx = (Mtx *) gd_malloc_perm(mtxs * sizeof(Mtx))) == NULL) {
         fatal_no_dl_mem();
     }
 
@@ -1545,7 +1545,7 @@ struct GdDisplayList *new_gd_dl(s32 id, s32 gfxs, s32 verts, s32 mtxs, s32 light
     }
     dl->curLightIdx = 0;
     dl->totalLights = lights;
-    if ((dl->light = gd_malloc_perm(lights * sizeof(Lights4))) == NULL) {
+    if ((dl->light = (Lights4 *) gd_malloc_perm(lights * sizeof(Lights4))) == NULL) {
         fatal_no_dl_mem();
     }
 
@@ -1554,7 +1554,7 @@ struct GdDisplayList *new_gd_dl(s32 id, s32 gfxs, s32 verts, s32 mtxs, s32 light
     }
     dl->curGfxIdx = 0;
     dl->totalGfx = gfxs;
-    if ((dl->gfx = gd_malloc_perm(gfxs * sizeof(Gfx))) == NULL) {
+    if ((dl->gfx = (Gfx *) gd_malloc_perm(gfxs * sizeof(Gfx))) == NULL) {
         fatal_no_dl_mem();
     }
 
@@ -1563,7 +1563,7 @@ struct GdDisplayList *new_gd_dl(s32 id, s32 gfxs, s32 verts, s32 mtxs, s32 light
     }
     dl->curVpIdx = 0;
     dl->totalVp = vps;
-    if ((dl->vp = gd_malloc_perm(vps * sizeof(Vp))) == NULL) {
+    if ((dl->vp = (Vp *) gd_malloc_perm(vps * sizeof(Vp))) == NULL) {
         fatal_no_dl_mem();
     }
 
@@ -2523,11 +2523,11 @@ void parse_p1_controller(void) {
     }
 
     for (i = 0; ((s32) i) < sDebugViewsCount; i++) {
-        sDebugViews[i]->flags &= ~VIEW_UPDATE;
+        sDebugViews[i]->flags = (enum GdViewFlags) ((int) sDebugViews[i]->flags & ~VIEW_UPDATE);
     }
 
     if (sCurrDebugViewIndex) {
-        sDebugViews[sCurrDebugViewIndex - 1]->flags |= VIEW_UPDATE;
+        sDebugViews[sCurrDebugViewIndex - 1]->flags = (enum GdViewFlags) ((int) sDebugViews[sCurrDebugViewIndex - 1]->flags | VIEW_UPDATE);
     }
 
     // deadzone checks
@@ -3109,12 +3109,12 @@ void update_cursor(void) {
         return;
 
     if (gGdCtrl.currFrame - gGdCtrl.dragStartFrame < 300) {
-        sHandView->flags |= VIEW_UPDATE;
+        sHandView->flags = (enum GdViewFlags) ((int) sHandView->flags | VIEW_UPDATE);
         // by playing the sfx every frame, it will only play once as it
         // never leaves the "sfx played last frame" buffer
         gd_play_sfx(GD_SFX_HAND_APPEAR);
     } else {
-        sHandView->flags &= ~VIEW_UPDATE;
+        sHandView->flags = (enum GdViewFlags) ((int) sHandView->flags & ~VIEW_UPDATE);
         gd_play_sfx(GD_SFX_HAND_DISAPPEAR);
     }
 
@@ -3156,9 +3156,9 @@ void Unknown801A4F58(void) {
     register s16 b;        // t2
     register s32 i;        // t3
 
-    cbufOff = sScreenView->colourBufs[gGdFrameBufNum ^ 1];
-    cbufOn = sScreenView->colourBufs[gGdFrameBufNum];
-    zbuf = sScreenView->zbuf;
+    cbufOff = (s16 *) sScreenView->colourBufs[gGdFrameBufNum ^ 1];
+    cbufOn = (s16 *) sScreenView->colourBufs[gGdFrameBufNum];
+    zbuf = (u16 *) sScreenView->zbuf;
 
     for (i = 0; i < (320 * 240); i++) { // L801A4FCC
         colour = cbufOff[i];
@@ -3327,7 +3327,7 @@ void gd_init(void) {
     sScreenView->colour.g = 0.0f;
     sScreenView->colour.b = 0.0f;
     sScreenView->parent = sScreenView;
-    sScreenView->flags &= ~VIEW_UPDATE;
+    sScreenView->flags = (enum GdViewFlags) ((int) sScreenView->flags & ~VIEW_UPDATE);
     sActiveView = sScreenView;
 
     // Zero out controller inputs
@@ -3458,15 +3458,15 @@ void Unknown801A5C80(struct ObjGroup *parentGroup) {
     struct ObjLabel *label;      // 3c
     struct ObjGroup *debugGroup; // 38
 
-    d_start_group("debugg");
-    label = (struct ObjLabel *) d_makeobj(D_LABEL, 0);
+    d_start_group((DynObjName) "debugg");
+    label = (struct ObjLabel *) d_makeobj(D_LABEL, (DynObjName) 0);
     d_set_rel_pos(10.0f, 230.0f, 0.0f);
-    d_set_parm_ptr(PARM_PTR_CHAR, gd_strdup("FT %2.2f"));
+    d_set_parm_ptr(PARM_PTR_CHAR, (void *) gd_strdup("FT %2.2f"));
     d_add_valptr(NULL, 0, OBJ_VALUE_FLOAT, (uintptr_t) &sTracked1FrameTime);
     label->unk30 = 3;
-    d_end_group("debugg");
+    d_end_group((DynObjName) "debugg");
 
-    debugGroup = (struct ObjGroup *) d_use_obj("debugg");
+    debugGroup = (struct ObjGroup *) d_use_obj((DynObjName) "debugg");
     make_view("debugview", (VIEW_2_COL_BUF | VIEW_ALLOC_ZBUF | VIEW_1_CYCLE | VIEW_DRAW), 2, 0, 0, 320,
               240, debugGroup);
 
@@ -3534,7 +3534,7 @@ void Unknown801A5D90(struct ObjGroup *arg0) {
             memview->colour.g = 0.0f;
             memview->colour.b = 0.0f;
             addto_group(arg0, &labelgrp->header);
-            memview->flags &= ~VIEW_UPDATE;
+            memview->flags = (enum GdViewFlags) ((int) memview->flags & ~VIEW_UPDATE);
             add_debug_view(memview);
         }
     }
@@ -3547,8 +3547,8 @@ void Unknown801A5FF8(struct ObjGroup *arg0) {
     struct ObjGroup *menugrp;      // 34
     UNUSED u32 pad2C[2];
 
-    d_start_group("menug");
-    sMenuGadgets[0] = d_makeobj(D_GADGET, "menu0");
+    d_start_group((DynObjName) "menug");
+    sMenuGadgets[0] = d_makeobj(D_GADGET, (DynObjName) "menu0");
     d_set_obj_draw_flag(OBJ_IS_GRABBALE);
     d_set_world_pos(5.0f, 0.0f, 0.0f);
     d_set_scale(100.0f, 20.0f, 0.0f);
@@ -3556,10 +3556,10 @@ void Unknown801A5FF8(struct ObjGroup *arg0) {
     d_set_colour_num(2);
     label = (struct ObjLabel *) d_makeobj(D_LABEL, AsDynName(0));
     d_set_rel_pos(5.0f, 18.0f, 0.0f);
-    d_set_parm_ptr(PARM_PTR_CHAR, "ITEM 1");
-    d_add_valptr("menu0", 0x40000, 0, (uintptr_t) NULL);
+    d_set_parm_ptr(PARM_PTR_CHAR, (void *) "ITEM 1");
+    d_add_valptr((DynObjName) "menu0", 0x40000, (enum ValPtrType) 0, (uintptr_t) NULL);
 
-    sMenuGadgets[1] = d_makeobj(D_GADGET, "menu1");
+    sMenuGadgets[1] = d_makeobj(D_GADGET, (DynObjName) "menu1");
     d_set_obj_draw_flag(OBJ_IS_GRABBALE);
     d_set_world_pos(5.0f, 25.0f, 0.0f);
     d_set_scale(100.0f, 20.0f, 0.0f);
@@ -3567,10 +3567,10 @@ void Unknown801A5FF8(struct ObjGroup *arg0) {
     d_set_colour_num(4);
     label = (struct ObjLabel *) d_makeobj(D_LABEL, AsDynName(0));
     d_set_rel_pos(5.0f, 18.0f, 0.0f);
-    d_set_parm_ptr(PARM_PTR_CHAR, "ITEM 2");
-    d_add_valptr("menu1", 0x40000, 0, (uintptr_t) NULL);
+    d_set_parm_ptr(PARM_PTR_CHAR, (void *) "ITEM 2");
+    d_add_valptr((DynObjName) "menu1", 0x40000, (enum ValPtrType) 0, (uintptr_t) NULL);
 
-    sMenuGadgets[2] = d_makeobj(D_GADGET, "menu2");
+    sMenuGadgets[2] = d_makeobj(D_GADGET, (DynObjName) "menu2");
     d_set_obj_draw_flag(OBJ_IS_GRABBALE);
     d_set_world_pos(5.0f, 50.0f, 0.0f);
     d_set_scale(100.0f, 20.0f, 0.0f);
@@ -3578,12 +3578,12 @@ void Unknown801A5FF8(struct ObjGroup *arg0) {
     d_set_colour_num(3);
     label = (struct ObjLabel *) d_makeobj(D_LABEL, AsDynName(0));
     d_set_rel_pos(5.0f, 18.0f, 0.0f);
-    d_set_parm_ptr(PARM_PTR_CHAR, "ITEM 3");
-    d_add_valptr("menu2", 0x40000, 0, (uintptr_t) NULL);
+    d_set_parm_ptr(PARM_PTR_CHAR, (void *) "ITEM 3");
+    d_add_valptr((DynObjName) "menu2", 0x40000, (enum ValPtrType) 0, (uintptr_t) NULL);
     sItemsInMenu = 3;
-    d_end_group("menug");
+    d_end_group((DynObjName) "menug");
 
-    menugrp = (struct ObjGroup *) d_use_obj("menug");
+    menugrp = (struct ObjGroup *) d_use_obj((DynObjName) "menug");
     menuview = make_view(
         "menuview", (VIEW_2_COL_BUF | VIEW_ALLOC_ZBUF | VIEW_BORDERED | VIEW_UNK_2000 | VIEW_UNK_4000),
         2, 100, 20, 110, 150, menugrp);
@@ -3629,18 +3629,18 @@ void gd_setup_cursor(struct ObjGroup *parentgrp) {
     gd_put_sprite((u16 *) gd_texture_hand_open, 100, 100, 32, 32);
     gd_enddlsplist_parent();
 
-    d_start_group("mouseg");
+    d_start_group((DynObjName) "mouseg");
     net = (struct ObjNet *) d_makeobj(D_NET, AsDynName(0));
     d_set_init_pos(0.0f, 0.0f, 0.0f);
     d_set_type(3);
     d_set_shapeptrptr(&sHandShape);
-    d_end_group("mouseg");
+    d_end_group((DynObjName) "mouseg");
 
-    mousegrp = (struct ObjGroup *) d_use_obj("mouseg");
+    mousegrp = (struct ObjGroup *) d_use_obj((DynObjName) "mouseg");
     mouseview = make_view("mouseview",
                           (VIEW_2_COL_BUF | VIEW_ALLOC_ZBUF | VIEW_1_CYCLE | VIEW_MOVEMENT | VIEW_DRAW),
                           2, 0, 0, 32, 32, mousegrp);
-    mouseview->flags &= ~VIEW_UPDATE;
+    mouseview->flags = (enum GdViewFlags) ((int) mouseview->flags & ~VIEW_UPDATE);
     sHandView = mouseview;
     if (parentgrp != NULL) {
         addto_group(parentgrp, &mousegrp->header);
@@ -3675,8 +3675,8 @@ void make_timer_gadgets(void) {
     s32 i;
     char timerNameBuf[0x20];
 
-    d_start_group("timerg");
-    d_makeobj(D_GADGET, "bar1");
+    d_start_group((DynObjName) "timerg");
+    d_makeobj(D_GADGET, (DynObjName) "bar1");
     d_set_obj_draw_flag(OBJ_IS_GRABBALE);
     d_set_world_pos(20.0f, 5.0f, 0.0f);
     d_set_scale(50.0f, 5.0f, 0.0f);
@@ -3684,10 +3684,10 @@ void make_timer_gadgets(void) {
     d_set_parm_f(PARM_F_RANGE_MIN, 0);
     d_set_parm_f(PARM_F_RANGE_MAX, sTimeScaleFactor);
     d_add_valptr(NULL, 0, OBJ_VALUE_FLOAT, (uintptr_t) &sTimeScaleFactor);
-    bar1 = (struct ObjGadget *) d_use_obj("bar1");
+    bar1 = (struct ObjGadget *) d_use_obj((DynObjName) "bar1");
     bar1->colourNum = COLOUR_WHITE;
 
-    d_makeobj(D_GADGET, "bar2");
+    d_makeobj(D_GADGET, (DynObjName) "bar2");
     d_set_obj_draw_flag(OBJ_IS_GRABBALE);
     d_set_world_pos(70.0f, 5.0f, 0.0f);
     d_set_scale(50.0f, 5.0f, 0.0f);
@@ -3695,10 +3695,10 @@ void make_timer_gadgets(void) {
     d_set_parm_f(PARM_F_RANGE_MIN, 0);
     d_set_parm_f(PARM_F_RANGE_MAX, sTimeScaleFactor);
     d_add_valptr(NULL, 0, OBJ_VALUE_FLOAT, (uintptr_t) &sTimeScaleFactor);
-    bar2 = (struct ObjGadget *) d_use_obj("bar2");
+    bar2 = (struct ObjGadget *) d_use_obj((DynObjName) "bar2");
     bar2->colourNum = COLOUR_PINK;
 
-    d_makeobj(D_GADGET, "bar3");
+    d_makeobj(D_GADGET, (DynObjName) "bar3");
     d_set_obj_draw_flag(OBJ_IS_GRABBALE);
     d_set_world_pos(120.0f, 5.0f, 0.0f);
     d_set_scale(50.0f, 5.0f, 0.0f);
@@ -3706,10 +3706,10 @@ void make_timer_gadgets(void) {
     d_set_parm_f(PARM_F_RANGE_MIN, 0);
     d_set_parm_f(PARM_F_RANGE_MAX, sTimeScaleFactor);
     d_add_valptr(NULL, 0, OBJ_VALUE_FLOAT, (uintptr_t) &sTimeScaleFactor);
-    bar3 = (struct ObjGadget *) d_use_obj("bar3");
+    bar3 = (struct ObjGadget *) d_use_obj((DynObjName) "bar3");
     bar3->colourNum = COLOUR_WHITE;
 
-    d_makeobj(D_GADGET, "bar4");
+    d_makeobj(D_GADGET, (DynObjName) "bar4");
     d_set_obj_draw_flag(OBJ_IS_GRABBALE);
     d_set_world_pos(170.0f, 5.0f, 0.0f);
     d_set_scale(50.0f, 5.0f, 0.0f);
@@ -3717,10 +3717,10 @@ void make_timer_gadgets(void) {
     d_set_parm_f(PARM_F_RANGE_MIN, 0);
     d_set_parm_f(PARM_F_RANGE_MAX, sTimeScaleFactor);
     d_add_valptr(NULL, 0, OBJ_VALUE_FLOAT, (uintptr_t) &sTimeScaleFactor);
-    bar4 = (struct ObjGadget *) d_use_obj("bar4");
+    bar4 = (struct ObjGadget *) d_use_obj((DynObjName) "bar4");
     bar4->colourNum = COLOUR_PINK;
 
-    d_makeobj(D_GADGET, "bar5");
+    d_makeobj(D_GADGET, (DynObjName) "bar5");
     d_set_obj_draw_flag(OBJ_IS_GRABBALE);
     d_set_world_pos(220.0f, 5.0f, 0.0f);
     d_set_scale(50.0f, 5.0f, 0.0f);
@@ -3728,10 +3728,10 @@ void make_timer_gadgets(void) {
     d_set_parm_f(PARM_F_RANGE_MIN, 0);
     d_set_parm_f(PARM_F_RANGE_MAX, sTimeScaleFactor);
     d_add_valptr(NULL, 0, OBJ_VALUE_FLOAT, (uintptr_t) &sTimeScaleFactor);
-    bar5 = (struct ObjGadget *) d_use_obj("bar5");
+    bar5 = (struct ObjGadget *) d_use_obj((DynObjName) "bar5");
     bar5->colourNum = COLOUR_WHITE;
 
-    d_makeobj(D_GADGET, "bar6");
+    d_makeobj(D_GADGET, (DynObjName) "bar6");
     d_set_obj_draw_flag(OBJ_IS_GRABBALE);
     d_set_world_pos(270.0f, 5.0f, 0.0f);
     d_set_scale(50.0f, 5.0f, 0.0f);
@@ -3739,7 +3739,7 @@ void make_timer_gadgets(void) {
     d_set_parm_f(PARM_F_RANGE_MIN, 0);
     d_set_parm_f(PARM_F_RANGE_MAX, sTimeScaleFactor);
     d_add_valptr(NULL, 0, OBJ_VALUE_FLOAT, (uintptr_t) &sTimeScaleFactor);
-    bar6 = (struct ObjGadget *) d_use_obj("bar6");
+    bar6 = (struct ObjGadget *) d_use_obj((DynObjName) "bar6");
     bar6->colourNum = COLOUR_PINK;
 
     for (i = 0; i < GD_NUM_TIMERS; i++) {
@@ -3761,19 +3761,19 @@ void make_timer_gadgets(void) {
         timerLabel = (struct ObjLabel *) d_makeobj(D_LABEL, AsDynName(0));
         d_set_rel_pos(5.0f, 14.0f, 0);
         d_set_parm_ptr(PARM_PTR_CHAR, (void *) timer->name);
-        d_add_valptr(timerNameBuf, 0x40000, 0, (uintptr_t) NULL);
+        d_add_valptr(timerNameBuf, 0x40000, (enum ValPtrType) 0, (uintptr_t) NULL);
         timerLabel->unk30 = 3;
     }
 
-    d_end_group("timerg");
-    timerg = (struct ObjGroup *) d_use_obj("timerg");
+    d_end_group((DynObjName) "timerg");
+    timerg = (struct ObjGroup *) d_use_obj((DynObjName) "timerg");
     timersview = make_view(
         "timersview", (VIEW_2_COL_BUF | VIEW_ALLOC_ZBUF | VIEW_1_CYCLE | VIEW_MOVEMENT | VIEW_DRAW), 2,
         0, 10, 320, 270, timerg);
     timersview->colour.r = 0.0f;
     timersview->colour.g = 0.0f;
     timersview->colour.b = 0.0f;
-    timersview->flags &= ~VIEW_UPDATE;
+    timersview->flags = (enum GdViewFlags) ((int) timersview->flags & ~VIEW_UPDATE);
     timersview->proc = view_proc_print_timers;
     add_debug_view(timersview);
 

@@ -197,7 +197,7 @@ void decrease_sample_dma_ttls() {
     sUnused80226B40 = 0;
 }
 
-void *dma_sample_data(uintptr_t devAddr, u32 size, s32 arg2, u8 *dmaIndexRef) {
+SOUND_ALLOC_RETURN_TYPE dma_sample_data(uintptr_t devAddr, u32 size, s32 arg2, u8 *dmaIndexRef) {
     s32 hasDma = FALSE;
     struct SharedDma *dma;
     uintptr_t dmaDevAddr;
@@ -412,10 +412,10 @@ UNUSED static
 #endif
 void patch_sound(UNUSED struct AudioBankSound *sound, UNUSED u8 *memBase, UNUSED u8 *offsetBase) {
     struct AudioBankSample *sample;
-    void *patched;
+    SoundAllocResult patched = NULL;
     UNUSED u8 *mem; // unused on US
 
-#define PATCH(x, base) (patched = (void *)((uintptr_t) (x) + (uintptr_t) base))
+#define PATCH(x, base) (patched = SoundAllocResult((void *)((uintptr_t) (x) + (uintptr_t) base)))
 
     if (sound->sample != NULL) {
         sample = sound->sample = PATCH(sound->sample, memBase);
@@ -454,7 +454,7 @@ void patch_sound(UNUSED struct AudioBankSound *sound, UNUSED u8 *memBase, UNUSED
 {                                                                                         \
     struct AudioBankSound *sound = _sound;                                                \
     struct AudioBankSample *sample;                                                       \
-    void *patched;                                                                        \
+    SoundAllocResult patched = NULL;                                                      \
     if ((*sound).sample != (void *) 0)                                                    \
     {                                                                                     \
         patched = (void *)(((uintptr_t)(*sound).sample) + ((uintptr_t)((u8 *) mem)));     \
@@ -481,14 +481,14 @@ void patch_audio_bank(struct AudioBank *mem, u8 *offset, u32 numInstruments, u32
     struct Instrument **end;
     struct AudioBank *temp;
     u32 i;
-    void *patched;
+    SoundAllocResult patched = NULL;
     struct Drum *drum;
     struct Drum **drums;
 #if defined(VERSION_EU)
     u32 numDrums2;
 #endif
 
-#define BASE_OFFSET_REAL(x, base) (void *)((uintptr_t) (x) + (uintptr_t) base)
+#define BASE_OFFSET_REAL(x, base) SoundAllocResult((void *)((uintptr_t) (x) + (uintptr_t) base))
 #define PATCH(x, base) (patched = BASE_OFFSET_REAL(x, base))
 #define PATCH_MEM(x) x = PATCH(x, mem)
 
@@ -501,7 +501,7 @@ void patch_audio_bank(struct AudioBank *mem, u8 *offset, u32 numInstruments, u32
     drums = mem->drums;
 #if defined(VERSION_JP) || defined(VERSION_US)
     if (drums != NULL && numDrums > 0) {
-        mem->drums = (void *)((uintptr_t) drums + (uintptr_t) mem);
+        mem->drums = (struct Drum **)((uintptr_t) drums + (uintptr_t) mem);
         if (numDrums > 0) //! unneeded when -sopt is enabled
         for (i = 0; i < numDrums; i++) {
 #else
@@ -763,7 +763,7 @@ u8 get_missing_bank(u32 seqId, s32 *nonNullCount, s32 *nullCount) {
 }
 
 struct AudioBank *load_banks_immediate(s32 seqId, u8 *outDefaultBank) {
-    void *ret;
+    SoundAllocResult ret = NULL;
     u32 bankId;
     u16 offset;
     u8 i;
@@ -840,7 +840,7 @@ void load_sequence(u32 player, u32 seqId, s32 loadAsync) {
 }
 
 void load_sequence_internal(u32 player, u32 seqId, s32 loadAsync) {
-    void *sequenceData;
+    SoundAllocResult sequenceData = NULL;
     struct SequencePlayer *seqPlayer = &gSequencePlayers[player];
     UNUSED u32 padding[2];
 
@@ -923,7 +923,7 @@ void audio_init() {
 #endif
     UNUSED u32 size;
     UNUSED u64 *ptr64;
-    void *data;
+    u8 *data;
     UNUSED s32 pad2;
 
     gAudioLoadLock = AUDIO_LOCK_UNINITIALIZED;

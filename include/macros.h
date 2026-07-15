@@ -1,6 +1,10 @@
 #ifndef MACROS_H
 #define MACROS_H
 
+#ifdef __cplusplus
+#define register
+#endif
+
 #include "platform_info.h"
 
 #ifndef __sgi
@@ -33,7 +37,9 @@
 #endif
 
 // Static assertions
-#ifdef __GNUC__
+#if defined(__cplusplus)
+#define STATIC_ASSERT(cond, msg) static_assert(cond, msg)
+#elif defined(__GNUC__)
 #define STATIC_ASSERT(cond, msg) _Static_assert(cond, msg)
 #else
 #define STATIC_ASSERT(cond, msg) typedef char GLUE2(static_assertion_failed, __LINE__)[(cond) ? 1 : -1]
@@ -66,7 +72,25 @@
 // no conversion needed other than cast
 #define VIRTUAL_TO_PHYSICAL(addr)   ((uintptr_t)(addr))
 #define PHYSICAL_TO_VIRTUAL(addr)   ((uintptr_t)(addr))
+#ifdef __cplusplus
+struct AutoCastPtr {
+    void *ptr;
+    AutoCastPtr(void *p) : ptr(p) {}
+    template <typename T>
+    operator T*() const {
+        return reinterpret_cast<T*>(ptr);
+    }
+    operator void*() const {
+        return ptr;
+    }
+    operator uintptr_t() const {
+        return reinterpret_cast<uintptr_t>(ptr);
+    }
+};
+#define VIRTUAL_TO_PHYSICAL2(addr)  AutoCastPtr((void *)(addr))
+#else
 #define VIRTUAL_TO_PHYSICAL2(addr)  ((void *)(addr))
+#endif
 #endif
 
 #endif // MACROS_H

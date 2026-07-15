@@ -3834,11 +3834,11 @@ void update_graph_node_camera(struct GraphNodeCamera *gc) {
 
 Gfx *geo_camera_main(s32 callContext, struct GraphNode *g, void *context) {
     struct GraphNodeCamera *gc = (struct GraphNodeCamera *) g;
-    UNUSED Mat4 *unusedMat = context;
+    UNUSED Mat4 *unusedMat = (Mat4 *) context;
 
     switch (callContext) {
         case GEO_CONTEXT_CREATE:
-            create_camera(gc, context);
+            create_camera(gc, (struct AllocOnlyPool *) context);
             break;
         case GEO_CONTEXT_RENDER:
             update_graph_node_camera(gc);

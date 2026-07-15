@@ -112,19 +112,19 @@ uintptr_t set_segment_base_addr(s32 segment, void *addr) {
     return sSegmentTable[segment];
 }
 
-void *get_segment_base_addr(s32 segment) {
+MEMORY_RETURN_TYPE get_segment_base_addr(s32 segment) {
     return (void *) (sSegmentTable[segment] | 0x80000000);
 }
 
 #ifndef NO_SEGMENTED_MEMORY
-void *segmented_to_virtual(const void *addr) {
+MEMORY_RETURN_TYPE segmented_to_virtual(const void *addr) {
     size_t segment = (uintptr_t) addr >> 24;
     size_t offset = (uintptr_t) addr & 0x00FFFFFF;
 
     return (void *) ((sSegmentTable[segment] + offset) | 0x80000000);
 }
 
-void *virtual_to_segmented(u32 segment, const void *addr) {
+MEMORY_RETURN_TYPE virtual_to_segmented(u32 segment, const void *addr) {
     size_t offset = ((uintptr_t) addr & 0x1FFFFFFF) - sSegmentTable[segment];
 
     return (void *) ((segment << 24) + offset);
@@ -138,11 +138,11 @@ void move_segment_table_to_dmem(void) {
     }
 }
 #else
-void *segmented_to_virtual(const void *addr) {
+MEMORY_RETURN_TYPE segmented_to_virtual(const void *addr) {
     return (void *) addr;
 }
 
-void *virtual_to_segmented(UNUSED u32 segment, const void *addr) {
+MEMORY_RETURN_TYPE virtual_to_segmented(UNUSED u32 segment, const void *addr) {
     return (void *) addr;
 }
 
@@ -182,7 +182,7 @@ void main_pool_init(void *start, void *end) {
 #endif
 
 #ifdef USE_SYSTEM_MALLOC
-void *main_pool_alloc(u32 size, void (*releaseHandler)(void *addr)) {
+MEMORY_RETURN_TYPE main_pool_alloc(u32 size, void (*releaseHandler)(void *addr)) {
     struct MainPoolBlock *newListHead = (struct MainPoolBlock *) malloc(sizeof(struct MainPoolBlock) + size);
     if (newListHead == NULL) {
         abort();
@@ -232,6 +232,7 @@ u32 main_pool_pop_state(void) {
     struct MainPoolState *prevState = gMainPoolState->prev;
     main_pool_free(gMainPoolState);
     gMainPoolState = prevState;
+    return 0;
 }
 #else
 /**
@@ -239,7 +240,7 @@ u32 main_pool_pop_state(void) {
  * specified side of the pool (MEMORY_POOL_LEFT or MEMORY_POOL_RIGHT).
  * If there is not enough space, return NULL.
  */
-void *main_pool_alloc(u32 size, u32 side) {
+MEMORY_RETURN_TYPE main_pool_alloc(u32 size, u32 side) {
     struct MainPoolBlock *newListHead;
     void *addr = NULL;
 
@@ -387,7 +388,7 @@ static void *dynamic_dma_read(u8 *srcStart, u8 *srcEnd, UNUSED u32 side) {
     dest = main_pool_alloc(size, side);
 #endif
     if (dest != NULL) {
-        dma_read(dest, srcStart, srcEnd);
+        dma_read((u8 *) dest, srcStart, srcEnd);
     }
     return dest;
 }
@@ -518,7 +519,7 @@ void alloc_only_pool_clear(struct AllocOnlyPool *pool) {
     pool->lastBlockNextPos = 0;
 }
 
-void *alloc_only_pool_alloc(struct AllocOnlyPool *pool, s32 size) {
+MEMORY_RETURN_TYPE alloc_only_pool_alloc(struct AllocOnlyPool *pool, s32 size) {
     u8 *addr;
     u32 s = size;
     if (pool->lastBlockSize - pool->lastBlockNextPos < s) {
@@ -558,7 +559,7 @@ struct MemoryPool *mem_pool_init(UNUSED u32 size, UNUSED u32 side) {
     return pool;
 }
 
-void *mem_pool_alloc(struct MemoryPool *pool, u32 size) {
+MEMORY_RETURN_TYPE mem_pool_alloc(struct MemoryPool *pool, u32 size) {
     struct FreeListNode *node;
     struct AllocatedNode *an;
     s32 bin = -1;
@@ -595,7 +596,7 @@ void mem_pool_free(struct MemoryPool *pool, void *addr) {
     pool->bins[bin - 3] = node;
 }
 
-void *alloc_display_list(u32 size) {
+MEMORY_RETURN_TYPE alloc_display_list(u32 size) {
     size = ALIGN8(size);
     return alloc_only_pool_alloc(gGfxAllocOnlyPool, size);
 }
@@ -625,7 +626,7 @@ struct AllocOnlyPool *alloc_only_pool_init(u32 size, u32 side) {
  * Allocate from an allocation-only pool.
  * Return NULL if there is not enough space.
  */
-void *alloc_only_pool_alloc(struct AllocOnlyPool *pool, s32 size) {
+MEMORY_RETURN_TYPE alloc_only_pool_alloc(struct AllocOnlyPool *pool, s32 size) {
     void *addr = NULL;
 
     size = ALIGN4(size);
@@ -683,7 +684,7 @@ struct MemoryPool *mem_pool_init(u32 size, u32 side) {
 /**
  * Allocate from a memory pool. Return NULL if there is not enough space.
  */
-void *mem_pool_alloc(struct MemoryPool *pool, u32 size) {
+MEMORY_RETURN_TYPE mem_pool_alloc(struct MemoryPool *pool, u32 size) {
     struct MemoryBlock *freeBlock = &pool->freeList;
     void *addr = NULL;
 
@@ -749,7 +750,7 @@ void mem_pool_free(struct MemoryPool *pool, void *addr) {
     }
 }
 
-void *alloc_display_list(u32 size) {
+MEMORY_RETURN_TYPE alloc_display_list(u32 size) {
     void *ptr = NULL;
 
     size = ALIGN8(size);
@@ -763,20 +764,20 @@ void *alloc_display_list(u32 size) {
 #endif
 
 static struct DmaTable *load_dma_table_address(u8 *srcAddr) {
-    struct DmaTable *table = dynamic_dma_read(srcAddr, srcAddr + sizeof(u32),
+    struct DmaTable *table = (struct DmaTable *) dynamic_dma_read(srcAddr, srcAddr + sizeof(u32),
                                                              MEMORY_POOL_LEFT);
     u32 size = table->count * sizeof(struct OffsetSizePair) + 
         sizeof(struct DmaTable) - sizeof(struct OffsetSizePair);
     main_pool_free(table);
 
-    table = dynamic_dma_read(srcAddr, srcAddr + size, MEMORY_POOL_LEFT);
+    table = (struct DmaTable *) dynamic_dma_read(srcAddr, srcAddr + size, MEMORY_POOL_LEFT);
     table->srcAddr = srcAddr;
     return table;
 }
 
 void setup_dma_table_list(struct DmaHandlerList *list, void *srcAddr, void *buffer) {
     if (srcAddr != NULL) {
-        list->dmaTable = load_dma_table_address(srcAddr);
+        list->dmaTable = load_dma_table_address((u8 *) srcAddr);
     }
     list->currentAddr = NULL;
     list->bufTarget = buffer;
@@ -791,7 +792,7 @@ s32 load_patchable_table(struct DmaHandlerList *list, s32 index) {
         s32 size = table->anim[index].size;
 
         if (list->currentAddr != addr) {
-            dma_read(list->bufTarget, addr, addr + size);
+            dma_read((u8 *) list->bufTarget, addr, addr + size);
             list->currentAddr = addr;
             ret = TRUE;
         }

@@ -7,15 +7,10 @@ CC           := gcc
 CXX          := g++
 CFLAGS       := -I . -Wall -Wextra -Wno-unused-parameter -pedantic -O2 -s
 LDFLAGS      := -lm
-ALL_PROGRAMS := armips n64graphics n64graphics_ci mio0 n64cksum textconv patch_elf_32bit aifc_decode aiff_extract_codebook vadpcm_enc tabledesign extract_data_for_mio skyconv
+ALL_PROGRAMS := n64graphics n64graphics_ci mio0 n64cksum textconv patch_elf_32bit aifc_decode aiff_extract_codebook vadpcm_enc tabledesign extract_data_for_mio skyconv
 LIBAUDIOFILE := audiofile/libaudiofile.a
 
-# Only build armips from tools if it is not found on the system
-ifeq ($(call find-command,armips),)
-  BUILD_PROGRAMS := $(ALL_PROGRAMS)
-else
-  BUILD_PROGRAMS := $(filter-out armips,$(ALL_PROGRAMS))
-endif
+BUILD_PROGRAMS := $(ALL_PROGRAMS)
 
 default: all
 
@@ -52,10 +47,10 @@ skyconv_SOURCES := skyconv.c n64graphics.c utils.c
 
 armips: CC := $(CXX)
 armips_SOURCES := armips.cpp
-armips_CFLAGS  := -std=c++11 -fno-exceptions -fno-rtti -pipe
+armips_CFLAGS  := -std=c++11 -fno-exceptions -fno-rtti -pipe -DUNICODE -D_UNICODE
 armips_LDFLAGS := -pthread
 ifeq ($(HOST_ENV),MinGW)
-  armips_LDFLAGS += -municode
+  armips_LDFLAGS += -municode -mconsole
 endif
 
 all-except-recomp: $(LIBAUDIOFILE) $(BUILD_PROGRAMS)

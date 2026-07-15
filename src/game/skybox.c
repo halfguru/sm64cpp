@@ -306,12 +306,12 @@ void *create_skybox_ortho_matrix(s8 player) {
 Gfx *init_skybox_display_list(s8 player, s8 background, s8 colorIndex) {
     s32 dlCommandCount = 5 + (3 * 3) * 7; // 5 for the start and end, plus 9 skybox tiles
     void *skybox = alloc_display_list(dlCommandCount * sizeof(Gfx));
-    Gfx *dlist = skybox;
+    Gfx *dlist = (Gfx *) skybox;
 
     if (skybox == NULL) {
         return NULL;
     } else {
-        Mtx *ortho = create_skybox_ortho_matrix(player);
+        Mtx *ortho = (Mtx *) create_skybox_ortho_matrix(player);
 
         gSPDisplayList(dlist++, dl_skybox_begin);
         gSPMatrix(dlist++, VIRTUAL_TO_PHYSICAL(ortho), G_MTX_PROJECTION | G_MTX_MUL | G_MTX_NOPUSH);
@@ -320,7 +320,7 @@ Gfx *init_skybox_display_list(s8 player, s8 background, s8 colorIndex) {
         gSPDisplayList(dlist++, dl_skybox_end);
         gSPEndDisplayList(dlist);
     }
-    return skybox;
+    return (Gfx *) skybox;
 }
 
 /**

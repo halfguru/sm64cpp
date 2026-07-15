@@ -114,16 +114,18 @@ extern u8 gAudioResetPresetIdToLoad;
 extern volatile u8 gAudioResetStatus;
 #endif
 
-void *soundAlloc(struct SoundAllocPool *pool, u32 size);
-void *sound_alloc_uninitialized(struct SoundAllocPool *pool, u32 size);
+
+
+SOUND_ALLOC_RETURN_TYPE soundAlloc(struct SoundAllocPool *pool, u32 size);
+SOUND_ALLOC_RETURN_TYPE sound_alloc_uninitialized(struct SoundAllocPool *pool, u32 size);
 void sound_init_main_pools(s32 sizeForAudioInitPool);
 void sound_alloc_pool_init(struct SoundAllocPool *pool, void *memAddr, u32 size);
 #ifdef VERSION_SH
-void *alloc_bank_or_seq(s32 poolIdx, s32 size, s32 arg3, s32 id);
-void *get_bank_or_seq(s32 poolIdx, s32 arg1, s32 id);
+SOUND_ALLOC_RETURN_TYPE alloc_bank_or_seq(s32 poolIdx, s32 size, s32 arg3, s32 id);
+SOUND_ALLOC_RETURN_TYPE get_bank_or_seq(s32 poolIdx, s32 arg1, s32 id);
 #else
-void *alloc_bank_or_seq(struct SoundMultiPool *arg0, s32 arg1, s32 size, s32 arg3, s32 id);
-void *get_bank_or_seq(struct SoundMultiPool *arg0, s32 arg1, s32 id);
+SOUND_ALLOC_RETURN_TYPE alloc_bank_or_seq(struct SoundMultiPool *arg0, s32 arg1, s32 size, s32 arg3, s32 id);
+SOUND_ALLOC_RETURN_TYPE get_bank_or_seq(struct SoundMultiPool *arg0, s32 arg1, s32 id);
 #endif
 #if defined(VERSION_EU) || defined(VERSION_SH)
 s32 audio_shut_down_and_reset_step(void);

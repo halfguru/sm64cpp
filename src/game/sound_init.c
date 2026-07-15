@@ -319,7 +319,7 @@ void stop_cap_music(void) {
  * Called from threads: thread5_game_loop
  */
 void play_menu_sounds_extra(s32 a, void *b) {
-    play_sound(sMenuSoundsExtra[a], b);
+    play_sound(sMenuSoundsExtra[a], (f32 *) b);
 }
 
 /**

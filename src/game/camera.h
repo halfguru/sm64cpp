@@ -8,6 +8,10 @@
 #include "engine/geo_layout.h"
 #include "engine/graph_node.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "level_table.h"
 
 /**
@@ -771,5 +775,9 @@ void set_fov_shake_from_point_preset(u8 preset, f32 posX, f32 posY, f32 posZ);
 void obj_rotate_towards_point(struct Object *o, Vec3f point, s16 pitchOff, s16 yawOff, s16 pitchDiv, s16 yawDiv);
 
 Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // CAMERA_H

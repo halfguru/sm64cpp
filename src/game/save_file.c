@@ -70,7 +70,7 @@ static s32 read_eeprom_data(void *buffer, s32 size) {
             block_until_rumble_pak_free();
 #endif
             triesLeft--;
-            status = osEepromLongRead(&gSIEventMesgQueue, offset, buffer, size);
+            status = osEepromLongRead(&gSIEventMesgQueue, offset, (u8 *) buffer, size);
 #if ENABLE_RUMBLE
             release_rumble_pak_control();
 #endif
@@ -98,7 +98,7 @@ static s32 write_eeprom_data(void *buffer, s32 size) {
             block_until_rumble_pak_free();
 #endif
             triesLeft--;
-            status = osEepromLongWrite(&gSIEventMesgQueue, offset, buffer, size);
+            status = osEepromLongWrite(&gSIEventMesgQueue, offset, (u8 *) buffer, size);
 #if ENABLE_RUMBLE
             release_rumble_pak_control();
 #endif
@@ -130,7 +130,7 @@ static s32 verify_save_block_signature(void *buffer, s32 size, u16 magic) {
     if (sig->magic != magic) {
         return FALSE;
     }
-    if (sig->chksum != calc_checksum(buffer, size)) {
+    if (sig->chksum != calc_checksum((u8 *) buffer, size)) {
         return FALSE;
     }
     return TRUE;
@@ -143,7 +143,7 @@ static void add_save_block_signature(void *buffer, s32 size, u16 magic) {
     struct SaveBlockSignature *sig = (struct SaveBlockSignature *) ((size - 4) + (u8 *) buffer);
 
     sig->magic = magic;
-    sig->chksum = calc_checksum(buffer, size);
+    sig->chksum = calc_checksum((u8 *) buffer, size);
 }
 
 /**
