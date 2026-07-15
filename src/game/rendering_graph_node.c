@@ -1099,7 +1099,7 @@ static void geo_process_object(struct Object *node) {
                 mtxf_mul(gMatStackInterpolated[gMatStackIndex + 1], mtxf,
                      gMatStackInterpolated[gMatStackIndex]);
             } else {
-                mtxf_mul(gMatStackInterpolated[gMatStackIndex + 1], (void *) node->header.gfx.throwMatrix,
+                mtxf_mul(gMatStackInterpolated[gMatStackIndex + 1], *node->header.gfx.throwMatrix,
                          gMatStackInterpolated[gMatStackIndex]);
             }
             mtxf_copy(node->header.gfx.prevThrowMatrix, *node->header.gfx.throwMatrix);
@@ -1248,7 +1248,7 @@ void geo_process_held_object(struct GraphNodeHeldObject *node) {
         mtxf_mul(gMatStack[gMatStackIndex + 1], mat, gMatStack[gMatStackIndex + 1]);
         mtxf_scale_vec3f(gMatStack[gMatStackIndex + 1], gMatStack[gMatStackIndex + 1],
                          node->objNode->header.gfx.scale);
-        mtxf_copy(gMatStackInterpolated[gMatStackIndex + 1], (void *) gCurGraphNodeObject->throwMatrixInterpolated);
+        mtxf_copy(gMatStackInterpolated[gMatStackIndex + 1], *gCurGraphNodeObject->throwMatrixInterpolated);
         gMatStackInterpolated[gMatStackIndex + 1][3][0] = gMatStackInterpolated[gMatStackIndex][3][0];
         gMatStackInterpolated[gMatStackIndex + 1][3][1] = gMatStackInterpolated[gMatStackIndex][3][1];
         gMatStackInterpolated[gMatStackIndex + 1][3][2] = gMatStackInterpolated[gMatStackIndex][3][2];
@@ -1272,7 +1272,7 @@ void geo_process_held_object(struct GraphNodeHeldObject *node) {
         gGeoTempState.data = gCurAnimData;
         gGeoTempState.prevFrame = gPrevAnimFrame;
         gCurAnimType = 0;
-        gCurGraphNodeHeldObject = (void *) node;
+        gCurGraphNodeHeldObject = (struct GraphNodeHeldObject *) node;
         if (node->objNode->header.gfx.animInfo.curAnim != NULL) {
             geo_set_animation_globals(&node->objNode->header.gfx.animInfo, hasAnimation);
         }

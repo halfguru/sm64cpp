@@ -69,11 +69,11 @@ s32 is_anim_past_end(struct MarioState *m) {
  */
 s16 set_mario_animation(struct MarioState *m, s32 targetAnimID) {
     struct Object *o = m->marioObj;
-    struct Animation *targetAnim = m->animList->bufTarget;
+    struct Animation *targetAnim = (struct Animation *) m->animList->bufTarget;
 
     if (load_patchable_table(m->animList, targetAnimID)) {
-        targetAnim->values = (void *) VIRTUAL_TO_PHYSICAL((u8 *) targetAnim + (uintptr_t) targetAnim->values);
-        targetAnim->index = (void *) VIRTUAL_TO_PHYSICAL((u8 *) targetAnim + (uintptr_t) targetAnim->index);
+        targetAnim->values = (const s16 *) VIRTUAL_TO_PHYSICAL((u8 *) targetAnim + (uintptr_t) targetAnim->values);
+        targetAnim->index = (const u16 *) VIRTUAL_TO_PHYSICAL((u8 *) targetAnim + (uintptr_t) targetAnim->index);
     }
 
     if (o->header.gfx.animInfo.animID != targetAnimID) {
@@ -102,11 +102,11 @@ s16 set_mario_animation(struct MarioState *m, s32 targetAnimID) {
  */
 s16 set_mario_anim_with_accel(struct MarioState *m, s32 targetAnimID, s32 accel) {
     struct Object *o = m->marioObj;
-    struct Animation *targetAnim = m->animList->bufTarget;
+    struct Animation *targetAnim = (struct Animation *) m->animList->bufTarget;
 
     if (load_patchable_table(m->animList, targetAnimID)) {
-        targetAnim->values = (void *) VIRTUAL_TO_PHYSICAL((u8 *) targetAnim + (uintptr_t) targetAnim->values);
-        targetAnim->index = (void *) VIRTUAL_TO_PHYSICAL((u8 *) targetAnim + (uintptr_t) targetAnim->index);
+        targetAnim->values = (const s16 *) VIRTUAL_TO_PHYSICAL((u8 *) targetAnim + (uintptr_t) targetAnim->values);
+        targetAnim->index = (const u16 *) VIRTUAL_TO_PHYSICAL((u8 *) targetAnim + (uintptr_t) targetAnim->index);
     }
 
     if (o->header.gfx.animInfo.animID != targetAnimID) {
@@ -189,7 +189,7 @@ s16 find_mario_anim_flags_and_translation(struct Object *obj, s32 yaw, Vec3s tra
     f32 dx;
     f32 dz;
 
-    struct Animation *curAnim = (void *) obj->header.gfx.animInfo.curAnim;
+    struct Animation *curAnim = (struct Animation *) obj->header.gfx.animInfo.curAnim;
     s16 animFrame = geo_update_animation_frame(&obj->header.gfx.animInfo, NULL);
     u16 *animIndex = segmented_to_virtual((void *) curAnim->index);
     s16 *animValues = segmented_to_virtual((void *) curAnim->values);

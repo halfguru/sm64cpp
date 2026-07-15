@@ -6,6 +6,10 @@
 #include "macros.h"
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ROTATE_CLOCKWISE         0
 #define ROTATE_COUNTER_CLOCKWISE 1
 
@@ -120,5 +124,9 @@ Gfx *geo_movtex_draw_colored_no_update(s32 callContext, struct GraphNode *node, 
 Gfx *geo_movtex_draw_colored_2_no_update(s32 callContext, struct GraphNode *node, UNUSED Mat4 mtx);
 Gfx *geo_movtex_update_horizontal(s32 callContext, struct GraphNode *node, UNUSED Mat4 mtx);
 Gfx *geo_movtex_draw_colored_no_update(s32 callContext, struct GraphNode *node, UNUSED Mat4 mtx);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // MOVING_TEXTURE_H

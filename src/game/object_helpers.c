@@ -2305,7 +2305,7 @@ s32 cur_obj_set_direction_table(s8 *a0) {
 
 s32 cur_obj_progress_direction_table(void) {
     s8 spF;
-    s8 *sp8 = o->oToxBoxMovementPattern;
+    s8 *sp8 = (s8 *) o->oToxBoxMovementPattern;
     s32 sp4 = o->oToxBoxMovementStep + 1;
 
     if (sp8[sp4] != -1) {

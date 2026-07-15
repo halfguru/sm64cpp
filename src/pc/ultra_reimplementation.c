@@ -189,8 +189,6 @@ s32 osEepromLongWrite(UNUSED OSMesgQueue *mq, u8 address, u8 *buffer, int nbytes
     return ret;
 }
 
-s32 gNumVblanks;
-
 OSPiHandle *osCartRomInit(void) {
     static OSPiHandle handle;
     return &handle;
@@ -204,4 +202,31 @@ OSPiHandle *osDriveRomInit(void) {
 s32 osEPiStartDma(UNUSED OSPiHandle *pihandle, OSIoMesg *mb, UNUSED s32 direction) {
     memcpy(mb->dramAddr, (const void *) mb->devAddr, mb->size);
     osSendMesg(mb->hdr.retQueue, mb, OS_MESG_NOBLOCK);
+    return 0;
+}
+
+void bzero(void *s, size_t n) {
+    memset(s, 0, n);
+}
+
+OSMesg gMainReceivedMesg = NULL;
+OSMesgQueue gSIEventMesgQueue;
+u32 gNumVblanks = 0;
+s8 gResetTimer = 0;
+s8 gNmiResetBarsTimer = 0;
+s8 gDebugLevelSelect = 0;
+s8 gShowProfiler = 0;
+s8 gShowDebugText = 0;
+
+void set_vblank_handler(UNUSED s32 index, UNUSED struct VblankHandler *handler, UNUSED OSMesgQueue *queue, UNUSED OSMesg msg) {
+}
+
+void dispatch_audio_sptask(UNUSED struct SPTask *spTask) {
+}
+
+void exec_display_list(UNUSED struct SPTask *spTask) {
+}
+
+void bcopy(const void *src, void *dest, size_t n) {
+    memmove(dest, src, n);
 }

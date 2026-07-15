@@ -295,7 +295,7 @@ void sequence_channel_enable(struct SequencePlayer *seqPlayer, u8 channelIndex, 
         seqChannel->enabled = TRUE;
         seqChannel->finished = FALSE;
         seqChannel->scriptState.depth = 0;
-        seqChannel->scriptState.pc = script;
+        seqChannel->scriptState.pc = (u8 *) script;
         seqChannel->delay = 0;
         for (i = 0; i < LAYERS_MAX; i++) {
             if (seqChannel->layers[i] != NULL) {
@@ -368,7 +368,7 @@ void audio_list_push_back(struct AudioListItem *list, struct AudioListItem *item
 /**
  * Remove the last item from a list, and return it (or NULL if empty).
  */
-void *audio_list_pop_back(struct AudioListItem *list) {
+SOUND_ALLOC_RETURN_TYPE audio_list_pop_back(struct AudioListItem *list) {
     struct AudioListItem *item = list->prev;
     if (item == list) {
         return NULL;
@@ -1664,7 +1664,7 @@ void sequence_channel_process_script(struct SequenceChannel *seqChannel) {
 
                     case 0xc2: // chan_setdyntable
                         sp5A = m64_read_s16(state);
-                        seqChannel->dynTable = (void *) (seqPlayer->seqData + sp5A);
+                        seqChannel->dynTable = (u8 (*)[][2]) (seqPlayer->seqData + sp5A);
                         break;
 
                     case 0xc5: // chan_dynsetdyntable
@@ -1672,10 +1672,10 @@ void sequence_channel_process_script(struct SequenceChannel *seqChannel) {
 #if defined(VERSION_EU) || defined(VERSION_SH)
                             seqData = (*seqChannel->dynTable)[value];
                             sp38 = (u16)((seqData[0] << 8) + seqData[1]);
-                            seqChannel->dynTable = (void *) (seqPlayer->seqData + sp38);
+                             seqChannel->dynTable = (u8 (*)[][2]) (seqPlayer->seqData + sp38);
 #else
                             sp5A = (u16)((((*seqChannel->dynTable)[value])[0] << 8) + (((*seqChannel->dynTable)[value])[1]));
-                            seqChannel->dynTable = (void *) (seqPlayer->seqData + sp5A);
+                             seqChannel->dynTable = (u8 (*)[][2]) (seqPlayer->seqData + sp5A);
 #endif
                         }
                         break;

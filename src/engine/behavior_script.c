@@ -26,7 +26,7 @@
 #define BHV_CMD_GET_2ND_S16(index) (s16)(gCurBhvCommand[index] & 0xFFFF)
 
 #define BHV_CMD_GET_U32(index)     (u32)(gCurBhvCommand[index])
-#define BHV_CMD_GET_VPTR(index)    (void *)(gCurBhvCommand[index])
+#define BHV_CMD_GET_VPTR(index)    AutoCastPtr((void *)(gCurBhvCommand[index]))
 
 #define BHV_CMD_GET_ADDR_OF_CMD(index) (uintptr_t)(&gCurBhvCommand[index])
 

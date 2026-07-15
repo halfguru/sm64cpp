@@ -42,7 +42,7 @@ Gfx *geo_envfx_main(s32 callContext, struct GraphNode *node, Mat4 mtxf) {
                 gSPMatrix(&gfx[0], VIRTUAL_TO_PHYSICAL(mtx), G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
                 gSPBranchList(&gfx[1], VIRTUAL_TO_PHYSICAL(particleList));
 #else
-                gfx = particleList;
+                gfx = (Gfx *) particleList;
 #endif
                 execNode->fnNode.node.flags = (execNode->fnNode.node.flags & 0xFF) | 0x400;
             }

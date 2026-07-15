@@ -243,7 +243,7 @@ void discard_sequence(s32 seqId) {
     }
 }
 
-void *soundAlloc(struct SoundAllocPool *pool, u32 size) {
+SOUND_ALLOC_RETURN_TYPE soundAlloc(struct SoundAllocPool *pool, u32 size) {
 #if defined(VERSION_EU) || defined(VERSION_SH)
     u8 *start;
     u8 *pos;
@@ -283,7 +283,7 @@ void *soundAlloc(struct SoundAllocPool *pool, u32 size) {
 }
 
 #ifdef VERSION_SH
-void *sound_alloc_uninitialized(struct SoundAllocPool *pool, u32 size) {
+SOUND_ALLOC_RETURN_TYPE sound_alloc_uninitialized(struct SoundAllocPool *pool, u32 size) {
     u8 *start;
     u32 alignedSize = ALIGN16(size);
 
@@ -387,9 +387,9 @@ UNUSED static void unused_803163D4(void) {
 #endif
 
 #ifdef VERSION_SH
-void *alloc_bank_or_seq(s32 poolIdx, s32 size, s32 arg3, s32 id) {
+SOUND_ALLOC_RETURN_TYPE alloc_bank_or_seq(s32 poolIdx, s32 size, s32 arg3, s32 id) {
 #else
-void *alloc_bank_or_seq(struct SoundMultiPool *arg0, s32 arg1, s32 size, s32 arg3, s32 id) {
+SOUND_ALLOC_RETURN_TYPE alloc_bank_or_seq(struct SoundMultiPool *arg0, s32 arg1, s32 size, s32 arg3, s32 id) {
 #endif
     // arg3 = 0, 1 or 2?
 
@@ -780,7 +780,7 @@ void *alloc_bank_or_seq(struct SoundMultiPool *arg0, s32 arg1, s32 size, s32 arg
 }
 
 #ifdef VERSION_SH
-void *get_bank_or_seq(s32 poolIdx, s32 arg1, s32 id) {
+SOUND_ALLOC_RETURN_TYPE get_bank_or_seq(s32 poolIdx, s32 arg1, s32 id) {
     void *ret;
 
     ret = unk_pool1_lookup(poolIdx, id);
@@ -837,7 +837,7 @@ void *get_bank_or_seq_inner(s32 poolIdx, s32 arg1, s32 bankId) {
 }
 #endif
 #ifndef VERSION_SH
-void *get_bank_or_seq(struct SoundMultiPool *arg0, s32 arg1, s32 id) {
+SOUND_ALLOC_RETURN_TYPE get_bank_or_seq(struct SoundMultiPool *arg0, s32 arg1, s32 id) {
     u32 i;
     UNUSED void *ret;
     struct TemporaryPool *temporary = &arg0->temporary;

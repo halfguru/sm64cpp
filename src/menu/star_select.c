@@ -6,6 +6,7 @@
 #include "engine/graph_node.h"
 #include "eu_translation.h"
 #include "game/area.h"
+#include "game/behavior_actions.h"
 #include "game/game_init.h"
 #include "game/ingame_menu.h"
 #include "game/level_update.h"

@@ -50,18 +50,24 @@ struct DmaHandlerList
 extern struct MemoryPool *gEffectsMemoryPool;
 #endif
 
+#ifdef __cplusplus
+#define MEMORY_RETURN_TYPE AutoCastPtr
+#else
+#define MEMORY_RETURN_TYPE void *
+#endif
+
 uintptr_t set_segment_base_addr(s32 segment, void *addr);
-void *get_segment_base_addr(s32 segment);
-void *segmented_to_virtual(const void *addr);
-void *virtual_to_segmented(u32 segment, const void *addr);
+MEMORY_RETURN_TYPE get_segment_base_addr(s32 segment);
+MEMORY_RETURN_TYPE segmented_to_virtual(const void *addr);
+MEMORY_RETURN_TYPE virtual_to_segmented(u32 segment, const void *addr);
 void move_segment_table_to_dmem(void);
 
 #ifdef USE_SYSTEM_MALLOC
 void main_pool_init(void);
-void *main_pool_alloc(u32 size, void (*releaseHandler)(void *addr));
+MEMORY_RETURN_TYPE main_pool_alloc(u32 size, void (*releaseHandler)(void *addr));
 #else
 void main_pool_init(void *start, void *end);
-void *main_pool_alloc(u32 size, u32 side);
+MEMORY_RETURN_TYPE main_pool_alloc(u32 size, u32 side);
 #endif
 u32 main_pool_free(void *addr);
 void *main_pool_realloc(void *addr, u32 size);
@@ -86,18 +92,18 @@ void load_engine_code_segment(void);
 #ifdef USE_SYSTEM_MALLOC
 struct AllocOnlyPool *alloc_only_pool_init(void);
 void alloc_only_pool_clear(struct AllocOnlyPool *pool);
-void *alloc_only_pool_alloc(struct AllocOnlyPool *pool, s32 size);
+MEMORY_RETURN_TYPE alloc_only_pool_alloc(struct AllocOnlyPool *pool, s32 size);
 #else
 struct AllocOnlyPool *alloc_only_pool_init(u32 size, u32 side);
-void *alloc_only_pool_alloc(struct AllocOnlyPool *pool, s32 size);
+MEMORY_RETURN_TYPE alloc_only_pool_alloc(struct AllocOnlyPool *pool, s32 size);
 struct AllocOnlyPool *alloc_only_pool_resize(struct AllocOnlyPool *pool, u32 size);
 #endif
 
 struct MemoryPool *mem_pool_init(u32 size, u32 side);
-void *mem_pool_alloc(struct MemoryPool *pool, u32 size);
+MEMORY_RETURN_TYPE mem_pool_alloc(struct MemoryPool *pool, u32 size);
 void mem_pool_free(struct MemoryPool *pool, void *addr);
 
-void *alloc_display_list(u32 size);
+MEMORY_RETURN_TYPE alloc_display_list(u32 size);
 void setup_dma_table_list(struct DmaHandlerList *list, void *srcAddr, void *buffer);
 s32 load_patchable_table(struct DmaHandlerList *list, s32 index);
 

@@ -265,7 +265,7 @@ static char *read_file_line(FILE *file) {
     size_t bufferSize = 8;
     size_t offset = 0; // offset in buffer to write
 
-    buffer = malloc(bufferSize);
+    buffer = (char *) malloc(bufferSize);
     while (1) {
         // Read a line from the file
         if (fgets(buffer + offset, bufferSize - offset, file) == NULL) {
@@ -286,7 +286,7 @@ static char *read_file_line(FILE *file) {
 
         // If no newline or EOF was reached, then the whole line wasn't read.
         bufferSize *= 2; // Increase buffer size
-        buffer = realloc(buffer, bufferSize);
+        buffer = (char *) realloc(buffer, bufferSize);
         assert(buffer != NULL);
     }
 
@@ -414,7 +414,7 @@ void configfile_load(const char *filename) {
 void configfile_save(const char *filename) {
     FILE *file;
 
-    char *dir = malloc(128);
+    char *dir = (char *) malloc(128);
 
     printf("Saving configuration to '%s'\n", filename);
 

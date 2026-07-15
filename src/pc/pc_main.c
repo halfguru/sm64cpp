@@ -41,39 +41,17 @@
 
 #define CONFIG_FILE "settings.ini"
 
-OSMesg gMainReceivedMesg;
-OSMesgQueue gSIEventMesgQueue;
-
-s8 gResetTimer;
-s8 gNmiResetBarsTimer;
-s8 gDebugLevelSelect;
-s8 gShowProfiler;
-s8 gShowDebugText;
+extern struct SPTask *gGfxSPTask;
+extern struct AllocOnlyPool *gGfxAllocOnlyPool;
+static uint8_t inited = 0;
 
 static struct AudioAPI *audio_api;
 static struct GfxWindowManagerAPI *wm_api;
 static struct GfxRenderingAPI *rendering_api;
 
-extern void gfx_run(Gfx *commands);
 extern void thread5_game_loop(void *arg);
 extern void create_next_audio_buffer(s16 *samples, u32 num_samples);
 void game_loop_one_iteration(void);
-
-void dispatch_audio_sptask(UNUSED struct SPTask *spTask) {
-}
-
-void set_vblank_handler(UNUSED s32 index, UNUSED struct VblankHandler *handler, UNUSED OSMesgQueue *queue, UNUSED OSMesg *msg) {
-}
-
-static uint8_t inited = 0;
-
-#include "game/game_init.h" // for gGlobalTimer
-void exec_display_list(struct SPTask *spTask) {
-    if (!inited) {
-        return;
-    }
-    gfx_run((Gfx *)spTask->task.t.data_ptr);
-}
 
 #define printf
 
@@ -139,7 +117,7 @@ void produce_one_frame(void) {
     else if (configStayInCourse) {
         render_you_got_a_star(3);
     }
-    exec_display_list(gGfxSPTask);
+    gfx_run((Gfx *) gGfxSPTask->task.t.data_ptr);
     gfx_end_frame();
 }
 
@@ -200,14 +178,14 @@ void main_func(const char* gfx_dir) {
 
 #if defined(_WIN32) || defined(_WIN64)
     // Set the working directory
-    char *workingdir = malloc(128);
+    char *workingdir = (char *) malloc(128);
     strcpy(workingdir, getenv("LOCALAPPDATA"));
     strcat(workingdir, "\\SM64Plus\\");
     chdir(workingdir);
 #endif
 #ifdef TARGET_LINUX
     // Set the working directory
-    char *workingdir = malloc(128);
+    char *workingdir = (char *) malloc(128);
     const char *homedir;
     if ((homedir = getenv("HOME")) == NULL) {
         homedir = getpwuid(getuid())->pw_dir;
@@ -224,6 +202,9 @@ void main_func(const char* gfx_dir) {
         closedir(dir);
     } 
     else {
+        fprintf(stdout, "Working directory set to: %s\n", workingdir);
+        fflush(stdout);
+        perror("opendir gfx failed");
         MessageBox(0, "Failed to find the \"gfx\" folder in \"%LOCALAPPDATA%\\SM64Plus\". If you're using the launcher, try reinstalling the game. If not, copy the folder from \"build\\us_pc\".", "ERROR", MB_ICONERROR);
         exit(1);
     }

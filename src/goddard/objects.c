@@ -301,7 +301,7 @@ struct GdObj *make_object(enum ObjTypeFlag objType) {
 
     // Allocate memory for the object
     start_memtracker(typeName);
-    newObj = gd_malloc(objSize, objPermanence);
+    newObj = (struct GdObj *) gd_malloc(objSize, objPermanence);
     if (newObj == NULL) {
         fatal_printf("Cant allocate object '%s' memory!", typeName);
     }
@@ -371,7 +371,7 @@ struct ListNode *make_link_to_obj(struct ListNode *prevNode, struct GdObj *obj) 
 
     // Allocate link node
     start_memtracker("links");
-    newNode = gd_malloc_perm(sizeof(struct ListNode));
+    newNode = (struct ListNode *) gd_malloc_perm(sizeof(struct ListNode));
     if (newNode == NULL) {
         fatal_print("Cant allocate link memory!");
     }
@@ -395,7 +395,7 @@ struct ListNode *make_link_to_obj(struct ListNode *prevNode, struct GdObj *obj) 
 struct VtxLink *make_vtx_link(struct VtxLink *prevNode, Vtx *data) {
     struct VtxLink *newNode;
 
-    newNode = gd_malloc_perm(sizeof(struct VtxLink));
+    newNode = (struct VtxLink *) gd_malloc_perm(sizeof(struct VtxLink));
     if (newNode == NULL) {
         fatal_print("Cant allocate link memory!");
     }
@@ -624,7 +624,7 @@ struct ObjView *make_view(const char *name, s32 flags, s32 projectionType, s32 u
 
     addto_group(gGdViewsGroup, &newView->header);
 
-    newView->flags = flags | VIEW_UPDATE | VIEW_LIGHT;
+    newView->flags = (enum GdViewFlags) (flags | VIEW_UPDATE | VIEW_LIGHT);
     newView->id = sGdViewInfo.count++;
 
     if ((newView->components = parts) != NULL) {
@@ -1712,7 +1712,7 @@ void move_animator(struct ObjAnimator *animObj) {
                 break;
             case GD_ANIM_CAMERA_EYE3S_LOOKAT3S: // s16(*)[6]?
                 if (linkedObj->type == OBJ_TYPE_CAMERAS) {
-                    animDataCam = animData->data;
+                    animDataCam = (s16(*)[6]) animData->data;
 
                     // eye position
                     currTransform.pos.x = (f32) animDataCam[currKeyFrame][0];

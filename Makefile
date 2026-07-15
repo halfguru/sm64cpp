@@ -442,16 +442,12 @@ else # TARGET_N64
 
 AS := as
 ifneq ($(TARGET_WEB),1)
-  CC ?= gcc
+  CC ?= g++
   CXX ?= g++
 else
   CC := emcc
 endif
-ifeq ($(CXX_FILES),"")
-  LD := $(CC)
-else
-  LD := $(CXX)
-endif
+LD := $(CXX)
 OBJDUMP := objdump
 OBJCOPY := objcopy
 PYTHON := python3
@@ -509,7 +505,7 @@ endif
 GFX_CFLAGS += -DWIDESCREEN
 
 CC_CHECK := $(CC) -fsyntax-only -fsigned-char -Wall -Wextra -Wno-format-security -D_LANGUAGE_C $(DEF_INC_CFLAGS) $(PLATFORM_CFLAGS) $(GFX_CFLAGS)
-CFLAGS := $(OPT_FLAGS) -D_LANGUAGE_C $(DEF_INC_CFLAGS) $(PLATFORM_CFLAGS) $(GFX_CFLAGS) -fno-strict-aliasing -fwrapv -march=native
+CFLAGS := $(OPT_FLAGS) -std=c++17 -D_LANGUAGE_C $(DEF_INC_CFLAGS) $(PLATFORM_CFLAGS) $(GFX_CFLAGS) -fno-strict-aliasing -fwrapv -march=native
 
 ifeq ($(CUSTOM_TEXTURES),1)
   SKYCONV_ARGS := --store-names --write-tiles "$(BUILD_DIR)/textures/skybox_tiles"

@@ -5,6 +5,26 @@
 
 #include "types.h"
 
+#ifdef __cplusplus
+struct SoundAllocResult {
+    void *ptr;
+    SoundAllocResult(void *p) : ptr(p) {}
+    template <typename T>
+    operator T*() const {
+        return static_cast<T*>(ptr);
+    }
+    operator void*() const {
+        return ptr;
+    }
+    operator uintptr_t() const {
+        return reinterpret_cast<uintptr_t>(ptr);
+    }
+};
+#define SOUND_ALLOC_RETURN_TYPE SoundAllocResult
+#else
+#define SOUND_ALLOC_RETURN_TYPE void *
+#endif
+
 #if defined(VERSION_EU) || defined(VERSION_SH)
 #define SEQUENCE_PLAYERS 4
 #define SEQUENCE_CHANNELS 48

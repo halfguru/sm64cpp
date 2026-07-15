@@ -31,7 +31,7 @@ static void reset_gadget_default(struct ObjGadget *);
 
 /* 239EC0 -> 239F78 */
 void get_objvalue(union ObjVarVal *dst, enum ValPtrType type, void *base, size_t offset) {
-    union ObjVarVal *objAddr = (void *) ((u8 *) base + offset);
+    union ObjVarVal *objAddr = (union ObjVarVal *) ((u8 *) base + offset);
 
     switch (type) {
         case OBJ_VALUE_INT:
@@ -49,7 +49,7 @@ void get_objvalue(union ObjVarVal *dst, enum ValPtrType type, void *base, size_t
 void Unknown8018B7A8(void *a0) {
     struct GdVec3f sp1C;
 
-    set_cur_dynobj(a0);
+    set_cur_dynobj((struct GdObj *) a0);
     d_get_init_pos(&sp1C);
 
     sp1C.x += sStaticVec.x;
@@ -146,7 +146,7 @@ struct ObjGadget *make_gadget(UNUSED s32 a0, s32 a1) {
 
 /* 23A32C -> 23A3E4 */
 void set_objvalue(union ObjVarVal *src, enum ValPtrType type, void *base, size_t offset) {
-    union ObjVarVal *dst = (void *) ((u8 *) base + offset);
+    union ObjVarVal *dst = (union ObjVarVal *) ((u8 *) base + offset);
     switch (type) {
         case OBJ_VALUE_INT:
             dst->i = src->i;

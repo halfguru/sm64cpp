@@ -3,10 +3,10 @@
 #include "data.h"
 #include "effects.h"
 
-extern struct OSMesgQueue OSMesgQueue0;
-extern struct OSMesgQueue OSMesgQueue1;
-extern struct OSMesgQueue OSMesgQueue2;
-extern struct OSMesgQueue OSMesgQueue3;
+extern OSMesgQueue OSMesgQueue0;
+extern OSMesgQueue OSMesgQueue1;
+extern OSMesgQueue OSMesgQueue2;
+extern OSMesgQueue OSMesgQueue3;
 
 #ifdef VERSION_EU
 struct ReverbSettingsEU sReverbSettings[] = {

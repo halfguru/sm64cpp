@@ -161,6 +161,13 @@ def main():
     for path in os.environ["PATH"].split(os.pathsep):
         if os.path.isfile(os.path.join(path, "gmake")):
             make = "gmake"
+            break
+        elif os.path.isfile(os.path.join(path, "mingw32-make")):
+            make = "mingw32-make"
+            break
+        elif os.path.isfile(os.path.join(path, "mingw32-make.exe")):
+            make = "mingw32-make"
+            break
 
     # Make sure tools exist
     subprocess.check_call(
@@ -178,7 +185,7 @@ def main():
         if mio0 == "@sound":
             rom = roms[lang]
             args = [
-                "python3",
+                sys.executable,
                 "tools/disassemble_sound.py",
                 "baserom." + lang + ".z64",
             ]
@@ -201,9 +208,10 @@ def main():
             continue
 
         if mio0 is not None:
+            exe = "tools/mio0.exe" if os.name == "nt" else "./tools/mio0"
             image = subprocess.run(
                 [
-                    "./tools/mio0",
+                    exe,
                     "-d",
                     "-o",
                     str(mio0),
@@ -231,9 +239,10 @@ def main():
                             imagetype = "sky"
                         else:
                             imagetype =  "cake" + ("-eu" if "eu" in asset else "")
+                        exe = "tools/skyconv.exe" if os.name == "nt" else "./tools/skyconv"
                         subprocess.run(
                             [
-                                "./tools/skyconv",
+                                exe,
                                 "--type",
                                 imagetype,
                                 "--combine",
@@ -245,9 +254,10 @@ def main():
                     else:
                         w, h = meta
                         fmt = asset.split(".")[-2]
+                        exe = "tools/n64graphics.exe" if os.name == "nt" else "./tools/n64graphics"
                         subprocess.run(
                             [
-                                "./tools/n64graphics",
+                                exe,
                                 "-e",
                                 png_file.name,
                                 "-g",

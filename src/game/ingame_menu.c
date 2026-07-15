@@ -1,5 +1,5 @@
-#include <ultra64.h>
 #include <stdlib.h>
+#include <ultra64.h>
 #include <string.h>
 
 #include "actors/common1.h"
@@ -2827,7 +2827,7 @@ void render_pause_castle_main_strings(s16 x, s16 y) {
     u8 textCoin[] = { TEXT_COIN_X };
 #endif
 
-    void *courseName;
+    const u8 *courseName;
 
     u8 strVal[8];
     s16 starNum = gDialogLineNum;

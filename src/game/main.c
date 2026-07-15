@@ -131,7 +131,11 @@ void alloc_pool(void) {
     void *start = (void *) SEG_POOL_START;
     void *end = (void *) SEG_POOL_END;
 
+#ifdef USE_SYSTEM_MALLOC
+    main_pool_init();
+#else
     main_pool_init(start, end);
+#endif
     gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
 }
 
@@ -364,7 +368,7 @@ void thread3_main(UNUSED void *arg) {
     }
 }
 
-void set_vblank_handler(s32 index, struct VblankHandler *handler, OSMesgQueue *queue, OSMesg *msg) {
+void set_vblank_handler(s32 index, struct VblankHandler *handler, OSMesgQueue *queue, OSMesg msg) {
     handler->queue = queue;
     handler->msg = msg;
 

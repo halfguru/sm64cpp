@@ -420,7 +420,7 @@ void envfx_bubbles_update_switch(s32 mode, Vec3s camTo, Vec3s vertex1, Vec3s ver
  * that will be translated to bubble positions to draw the bubble image
  */
 void append_bubble_vertex_buffer(Gfx *gfx, s32 index, Vec3s vertex1, Vec3s vertex2, Vec3s vertex3,
-                                 Vtx *template) {
+                                 Vtx *vtxTemplate) {
     s32 i = 0;
     Vtx *vertBuf = alloc_display_list(15 * sizeof(Vtx));
 
@@ -429,17 +429,17 @@ void append_bubble_vertex_buffer(Gfx *gfx, s32 index, Vec3s vertex1, Vec3s verte
     }
 
     for (i = 0; i < 15; i += 3) {
-        vertBuf[i] = template[0];
+        vertBuf[i] = vtxTemplate[0];
         (vertBuf + i)->v.ob[0] = (gEnvFxBuffer + (index + i / 3))->xPos + vertex1[0];
         (vertBuf + i)->v.ob[1] = (gEnvFxBuffer + (index + i / 3))->yPos + vertex1[1];
         (vertBuf + i)->v.ob[2] = (gEnvFxBuffer + (index + i / 3))->zPos + vertex1[2];
 
-        vertBuf[i + 1] = template[1];
+        vertBuf[i + 1] = vtxTemplate[1];
         (vertBuf + i + 1)->v.ob[0] = (gEnvFxBuffer + (index + i / 3))->xPos + vertex2[0];
         (vertBuf + i + 1)->v.ob[1] = (gEnvFxBuffer + (index + i / 3))->yPos + vertex2[1];
         (vertBuf + i + 1)->v.ob[2] = (gEnvFxBuffer + (index + i / 3))->zPos + vertex2[2];
 
-        vertBuf[i + 2] = template[2];
+        vertBuf[i + 2] = vtxTemplate[2];
         (vertBuf + i + 2)->v.ob[0] = (gEnvFxBuffer + (index + i / 3))->xPos + vertex3[0];
         (vertBuf + i + 2)->v.ob[1] = (gEnvFxBuffer + (index + i / 3))->yPos + vertex3[1];
         (vertBuf + i + 2)->v.ob[2] = (gEnvFxBuffer + (index + i / 3))->zPos + vertex3[2];

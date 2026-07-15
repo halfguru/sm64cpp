@@ -36,22 +36,16 @@
 
 #include "level_table.h"
 
-#define STUB_LEVEL(_0, _1, _2, _3, _4, _5, _6, _7, _8)
-#define DEFINE_LEVEL(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10) + 3
-static const LevelScript script_exec_level_table[2
-  #include "level_defines.h"
-];
-#undef DEFINE_LEVEL
-#undef STUB_LEVEL
+extern const LevelScript script_exec_level_table[];
 
-static const LevelScript script_L1[4];
-static const LevelScript script_L2[4];
-static const LevelScript goto_mario_head_regular[4];
-static const LevelScript goto_mario_head_dizzy[4];
-static const LevelScript script_L5[4];
+extern const LevelScript script_L1[];
+extern const LevelScript script_L2[];
+extern const LevelScript goto_mario_head_regular[];
+extern const LevelScript goto_mario_head_dizzy[];
+extern const LevelScript script_L5[];
 
 #define STUB_LEVEL(_0, _1, _2, _3, _4, _5, _6, _7, _8)
-#define DEFINE_LEVEL(_0, _1, _2, folder, _4, _5, _6, _7, _8, _9, _10) static const LevelScript script_exec_ ## folder [4 + 1];
+#define DEFINE_LEVEL(_0, _1, _2, folder, _4, _5, _6, _7, _8, _9, _10) extern const LevelScript script_exec_ ## folder [];
 
 #include "level_defines.h"
 
@@ -126,23 +120,23 @@ const LevelScript level_main_scripts_entry[] = {
     JUMP_IF(/*op*/ OP_EQ, /*arg*/ -9, script_L5),
 };
 
-static const LevelScript script_L1[] = {
+const LevelScript script_L1[] = {
     EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_splash_screen),
 };
 
-static const LevelScript script_L2[] = {
+const LevelScript script_L2[] = {
     EXIT_AND_EXECUTE(/*seg*/ 0x0E, _endingSegmentRomStart, _endingSegmentRomEnd, level_ending_entry),
 };
 
-static const LevelScript goto_mario_head_regular[] = {
+const LevelScript goto_mario_head_regular[] = {
     EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_mario_head_regular),
 };
 
-static const LevelScript goto_mario_head_dizzy[] = {
+const LevelScript goto_mario_head_dizzy[] = {
     EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_mario_head_dizzy),
 };
 
-static const LevelScript script_L5[] = {
+const LevelScript script_L5[] = {
     EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_entry_4),
 };
 
@@ -152,7 +146,7 @@ static const LevelScript script_L5[] = {
 
 #define DEFINE_LEVEL(_0, levelenum, _2, folder, _4, _5, _6, _7, _8, _9, _10) JUMP_IF(OP_EQ, levelenum, script_exec_ ## folder),
 
-static const LevelScript script_exec_level_table[] = {
+const LevelScript script_exec_level_table[] = {
     GET_OR_SET(/*op*/ OP_GET, /*var*/ VAR_CURR_LEVEL_NUM),
     #include "levels/level_defines.h"
     EXIT(),
@@ -160,7 +154,7 @@ static const LevelScript script_exec_level_table[] = {
 #undef DEFINE_LEVEL
 
 #define DEFINE_LEVEL(_0, _1, _2, folder, _4, _5, _6, _7, _8, _9, _10) \
-static const LevelScript script_exec_ ## folder [] = { \
+const LevelScript script_exec_ ## folder [] = { \
     EXECUTE(0x0E, _ ## folder ## SegmentRomStart, _ ## folder ## SegmentRomEnd, level_ ## folder ## _entry), \
     RETURN(), \
 };

@@ -563,8 +563,8 @@ static struct ShaderProgram *gfx_opengl_create_and_load_new_shader(uint32_t shad
     struct CCFeatures cc_features;
     gfx_cc_get_features(shader_id, &cc_features);
 
-    char vs_buf[1024];
-    char fs_buf[1024];
+    char vs_buf[8192];
+    char fs_buf[8192];
     size_t vs_len = 0;
     size_t fs_len = 0;
     size_t num_floats = 4;
@@ -715,11 +715,7 @@ static struct ShaderProgram *gfx_opengl_create_and_load_new_shader(uint32_t shad
     vs_buf[vs_len] = '\0';
     fs_buf[fs_len] = '\0';
 
-    /*puts("Vertex shader:");
-    puts(vs_buf);
-    puts("Fragment shader:");
-    puts(fs_buf);
-    puts("End");*/
+
 
     const GLchar *sources[2] = { vs_buf, fs_buf };
     const GLint lengths[2] = { vs_len, fs_len };
@@ -837,7 +833,7 @@ static void gfx_opengl_shader_get_info(struct ShaderProgram *prg, uint8_t *num_i
 static GLuint gfx_opengl_new_texture(void) {
     if (num_textures >= tex_cache_size) {
         tex_cache_size += TEX_CACHE_STEP;
-        tex_cache = realloc(tex_cache, sizeof(struct GLTexture) * tex_cache_size);
+        tex_cache = (struct GLTexture *) realloc(tex_cache, sizeof(struct GLTexture) * tex_cache_size);
         // Invalidate to prevent pointing to garbage
         opengl_tex[0] = NULL;
         opengl_tex[1] = NULL;
@@ -934,7 +930,7 @@ static void gfx_opengl_init(void) {
 #endif
     
     tex_cache_size = TEX_CACHE_STEP;
-    tex_cache = calloc(tex_cache_size, sizeof(struct GLTexture));
+    tex_cache = (struct GLTexture *) calloc(tex_cache_size, sizeof(struct GLTexture));
     if (!tex_cache) {
         // Handling memory allocation failure
         fprintf(stderr, "Out of memory allocating texture cache!\n");

@@ -699,7 +699,7 @@ void geo_obj_init(struct GraphNodeObject *graphNode, void *sharedChild, Vec3f po
     vec3f_copy(graphNode->pos, pos);
     vec3s_copy(graphNode->angle, angle);
 
-    graphNode->sharedChild = sharedChild;
+    graphNode->sharedChild = (struct GraphNode *) sharedChild;
     graphNode->unk4C = 0;
     graphNode->throwMatrix = NULL;
     graphNode->animInfo.curAnim = NULL;

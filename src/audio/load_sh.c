@@ -163,7 +163,7 @@ void decrease_sample_dma_ttls() {
 }
 
 extern char shindouDebugPrint62[]; // "SUPERDMA"
-void *dma_sample_data(uintptr_t devAddr, u32 size, s32 arg2, u8 *dmaIndexRef, s32 medium) {
+SOUND_ALLOC_RETURN_TYPE dma_sample_data(uintptr_t devAddr, u32 size, s32 arg2, u8 *dmaIndexRef, s32 medium) {
     UNUSED s32 sp60;
     struct SharedDma *dma;
     s32 hasDma = FALSE;
