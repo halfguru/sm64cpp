@@ -5,9 +5,12 @@
 #include <string.h>
 #include <assert.h>
 #include <ctype.h>
-#ifdef __linux__
-#include <sys/stat.h>
-#endif
+
+#include <fstream>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <filesystem>
 
 #include "configfile.h"
 #include "../game/settings.h"
@@ -18,12 +21,14 @@
 static const struct ConfigOption options[] = {
     // DISPLAY
     { .name = "DISPLAY", .type = CONFIG_TYPE_SECTION },
-    { .name = "fullscreen", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configFullscreen },
+    { .name = "fullscreen", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configFullscreen },
     { .name = "default_monitor", .type = CONFIG_TYPE_UINT, .uintValue = &configDefaultMonitor },
-    { .name = "vsync", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configVSync },
+    { .name = "vsync", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configVSync },
     { .name = "window_width", .type = CONFIG_TYPE_UINT, .uintValue = &configWindowWidth },
     { .name = "window_height", .type = CONFIG_TYPE_UINT, .uintValue = &configWindowHeight },
-    { .name = "fullscreen_display_mode", .type = CONFIG_TYPE_UINT, .uintValue = &configFullscreenDisplayMode },
+    { .name = "fullscreen_display_mode",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configFullscreenDisplayMode },
     { .name = "graphics_backend", .type = CONFIG_TYPE_UINT, .uintValue = &configGraphicsBackend },
 
     // AUDIO
@@ -35,105 +40,185 @@ static const struct ConfigOption options[] = {
 
     // GRAPHICS
     { .name = "GRAPHICS", .type = CONFIG_TYPE_SECTION },
-    { .name = "internal_resolution", .type = CONFIG_TYPE_FLOAT, .floatValue = &configInternalResolution },
+    { .name = "internal_resolution",
+      .type = CONFIG_TYPE_FLOAT,
+      .floatValue = &configInternalResolution },
     { .name = "aspect_ratio", .type = CONFIG_TYPE_UINT, .uintValue = &configAspectRatio },
     { .name = "frame_rate", .type = CONFIG_TYPE_UINT, .uintValue = &configFrameRate },
     { .name = "anti_aliasing", .type = CONFIG_TYPE_UINT, .uintValue = &configAntiAliasing },
     { .name = "draw_distance", .type = CONFIG_TYPE_FLOAT, .floatValue = &configDrawDistanceMultiplier },
     { .name = "level_of_detail", .type = CONFIG_TYPE_UINT, .uintValue = &configLevelOfDetail },
     { .name = "texture_filtering", .type = CONFIG_TYPE_SINT, .sintValue = &configTextureFiltering },
-    { .name = "anisotropic_filtering", .type = CONFIG_TYPE_UINT, .uintValue = &configAnisotropicFiltering },
+    { .name = "anisotropic_filtering",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configAnisotropicFiltering },
     { .name = "noise_type", .type = CONFIG_TYPE_UINT, .uintValue = &configNoiseType },
-    { .name = "n64_blur", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configN64Blur },
+    { .name = "n64_blur", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configN64Blur },
 
     // CONTROLS
     { .name = "CONTROLS", .type = CONFIG_TYPE_SECTION },
-    { .name = "improved_controls", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configImprovedControls },
-    { .name = "improved_swimming", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configImprovedSwimming },
-    { .name = "improved_hanging", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configImprovedHanging },
-    { .name = "enemy_bouncing", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configEnemyBouncing },
-    { .name = "dpad_controls", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configDpadControls },
-    { .name = "full_air_control", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configFullAirControl },
+    { .name = "improved_controls",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configImprovedControls },
+    { .name = "improved_swimming",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configImprovedSwimming },
+    { .name = "improved_hanging",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configImprovedHanging },
+    { .name = "enemy_bouncing", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configEnemyBouncing },
+    { .name = "dpad_controls", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configDpadControls },
+    { .name = "full_air_control",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configFullAirControl },
 
     // GAMEPLAY
     { .name = "GAMEPLAY", .type = CONFIG_TYPE_SECTION },
     { .name = "fix_gameplay_bugs", .type = CONFIG_TYPE_UINT, .uintValue = &configApplyBugFixes },
-    { .name = "save_lives_to_save_file", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configSaveLives },
-    { .name = "make_items_respawn", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configRespawnCertainItems },
-    { .name = "remove_inconvenient_warps", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configRemoveAnnoyingWarps },
-    { .name = "improved_powerups", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configBetterPowerups },
-    { .name = "improved_enemies", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configBetterEnemies },
-    { .name = "improved_npcs", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configTalkNPCs },
-    { .name = "improved_blast_away_the_wall", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configBetterBlastAwayTheWall },
-    { .name = "bring_mips_back", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configBringMipsBack },
-    { .name = "disable_fall_damage", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configDisableFallDamage },
-    { .name = "allow_leaving_the_course_at_any_time", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configLeaveAnyTime },
+    { .name = "save_lives_to_save_file",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configSaveLives },
+    { .name = "make_items_respawn",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configRespawnCertainItems },
+    { .name = "remove_inconvenient_warps",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configRemoveAnnoyingWarps },
+    { .name = "improved_powerups",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configBetterPowerups },
+    { .name = "improved_enemies",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configBetterEnemies },
+    { .name = "improved_npcs", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configTalkNPCs },
+    { .name = "improved_blast_away_the_wall",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configBetterBlastAwayTheWall },
+    { .name = "bring_mips_back", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configBringMipsBack },
+    { .name = "disable_fall_damage",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configDisableFallDamage },
+    { .name = "allow_leaving_the_course_at_any_time",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configLeaveAnyTime },
 
     // PROGRESSION
     { .name = "PROGRESSION", .type = CONFIG_TYPE_SECTION },
-    { .name = "tie_bowsers_sub_to_missions", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configBowsersSub },
+    { .name = "tie_bowsers_sub_to_missions",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configBowsersSub },
     { .name = "always_stay_in_course", .type = CONFIG_TYPE_UINT, .uintValue = &configStayInCourse },
-    { .name = "skip_mission_select", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configSkipMissionSelect },
-    { .name = "auto_switch_to_the_next_mission", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configSwitchToNextMission },
-    { .name = "skip_cutscenes", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configSkipCutscenes },
+    { .name = "skip_mission_select",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configSkipMissionSelect },
+    { .name = "auto_switch_to_the_next_mission",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configSwitchToNextMission },
+    { .name = "skip_cutscenes", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configSkipCutscenes },
 
     // CAMERA
     { .name = "CAMERA", .type = CONFIG_TYPE_SECTION },
     { .name = "default_camera_mode", .type = CONFIG_TYPE_UINT, .uintValue = &configDefaultCameraMode },
-    { .name = "alternate_camera_mode", .type = CONFIG_TYPE_UINT, .uintValue = &configAlternateCameraMode },
-    { .name = "horizontal_analog_camera", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configImprovedCamera },
-    { .name = "vertical_analog_camera", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configVerticalCamera },
-    { .name = "improved_cbutton_camera", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configImprovedCButtonCamera },
-    { .name = "center_camera_button", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configCenterCameraButton },
-    { .name = "invert_horizontal_camera_controls", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configInvertedCamera },
-    { .name = "invert_vertical_camera_controls", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configInvertedVerticalCamera },
+    { .name = "alternate_camera_mode",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configAlternateCameraMode },
+    { .name = "horizontal_analog_camera",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configImprovedCamera },
+    { .name = "vertical_analog_camera",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configVerticalCamera },
+    { .name = "improved_cbutton_camera",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configImprovedCButtonCamera },
+    { .name = "center_camera_button",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configCenterCameraButton },
+    { .name = "invert_horizontal_camera_controls",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configInvertedCamera },
+    { .name = "invert_vertical_camera_controls",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configInvertedVerticalCamera },
     { .name = "analog_camera_speed", .type = CONFIG_TYPE_FLOAT, .floatValue = &configCameraSpeed },
-    { .name = "additional_camera_distance", .type = CONFIG_TYPE_FLOAT, .floatValue = &configAdditionalCameraDistance },
+    { .name = "additional_camera_distance",
+      .type = CONFIG_TYPE_FLOAT,
+      .floatValue = &configAdditionalCameraDistance },
     { .name = "additional_fov", .type = CONFIG_TYPE_FLOAT, .floatValue = &configAdditionalFOV },
 
     // HUD AND UI
     { .name = "HUD AND UI", .type = CONFIG_TYPE_SECTION },
-    { .name = "fix_text_typos", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configFixTextTypos },
-    { .name = "add_quit_option", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configQuitOption },
+    { .name = "fix_text_typos", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configFixTextTypos },
+    { .name = "add_quit_option", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configQuitOption },
     { .name = "hud_layout", .type = CONFIG_TYPE_UINT, .uintValue = &configHudLayout },
-    { .name = "4by3_hud", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&config4by3Hud },
-    { .name = "show_the_collected_stars", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configHudStars },
-    { .name = "add_zeroes_to_counters", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configAddZeroes },
-    { .name = "always_show_the_100_coin_star", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configShow100CoinStar },
-    { .name = "always_show_the_health_meter", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configAlwaysShowHealth },
-    { .name = "hud_filtering", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configHUDFiltering },
-    { .name = "hide_hud", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configHideHud },
+    { .name = "4by3_hud", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &config4by3Hud },
+    { .name = "show_the_collected_stars",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configHudStars },
+    { .name = "add_zeroes_to_counters",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configAddZeroes },
+    { .name = "always_show_the_100_coin_star",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configShow100CoinStar },
+    { .name = "always_show_the_health_meter",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configAlwaysShowHealth },
+    { .name = "hud_filtering", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configHUDFiltering },
+    { .name = "hide_hud", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configHideHud },
 
     // EXTRA MOVES
     { .name = "EXTRA MOVES", .type = CONFIG_TYPE_SECTION },
-    { .name = "wall_sliding", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configWallSliding },
-    { .name = "ground_pound_jump", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configGroundPoundJump },
-    { .name = "sunshine_dive_hop", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configSunshineDive },
-    { .name = "odyssey_ground_pound_dive", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configOdysseyDive },
-    { .name = "odyssey_rolling", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configRolling },
-    { .name = "flashback_ground_pound", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configFlashbackGroundPound },
+    { .name = "wall_sliding", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configWallSliding },
+    { .name = "ground_pound_jump",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configGroundPoundJump },
+    { .name = "sunshine_dive_hop",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configSunshineDive },
+    { .name = "odyssey_ground_pound_dive",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configOdysseyDive },
+    { .name = "odyssey_rolling", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configRolling },
+    { .name = "flashback_ground_pound",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configFlashbackGroundPound },
 
     // RESTORATIONS
     { .name = "RESTORATIONS", .type = CONFIG_TYPE_SECTION },
-    { .name = "enable_the_unused_pyramid_cutscene", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configUnusedPyramidCutscene },
-    { .name = "restore_unused_sound_effects", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configRestoreUnusedSounds },
-    { .name = "restore_mother_penguins_sad_eyes", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configPenguinSadEyes },
-    { .name = "replace_triple_jump_with_twirl", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configTwirlTripleJump },
-    { .name = "use_beta_like_camera", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configBetaLikeCamera },
-    { .name = "make_mario_sparkle_at_course_start", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configSpawnSparkles },
-    { .name = "replace_keys_with_stars_when_collected", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configReplaceKeysWithStars },
+    { .name = "enable_the_unused_pyramid_cutscene",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configUnusedPyramidCutscene },
+    { .name = "restore_unused_sound_effects",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configRestoreUnusedSounds },
+    { .name = "restore_mother_penguins_sad_eyes",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configPenguinSadEyes },
+    { .name = "replace_triple_jump_with_twirl",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configTwirlTripleJump },
+    { .name = "use_beta_like_camera",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configBetaLikeCamera },
+    { .name = "make_mario_sparkle_at_course_start",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configSpawnSparkles },
+    { .name = "replace_keys_with_stars_when_collected",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configReplaceKeysWithStars },
 
     // BONUS MODES
     { .name = "BONUS MODES", .type = CONFIG_TYPE_SECTION },
-    { .name = "casual_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configCasualMode },
+    { .name = "casual_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configCasualMode },
     { .name = "infinite_lives_mode", .type = CONFIG_TYPE_UINT, .uintValue = &configLifeMode },
     { .name = "encore_mode", .type = CONFIG_TYPE_UINT, .uintValue = &configEncoreMode },
-    { .name = "invisible_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configInvisibleMode },
-    { .name = "no_healing_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configNoHealingMode },
+    { .name = "invisible_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configInvisibleMode },
+    { .name = "no_healing_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configNoHealingMode },
     { .name = "green_demon_mode", .type = CONFIG_TYPE_UINT, .uintValue = &configGreenDemon },
-    { .name = "hard_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configHardSave },
-    { .name = "daredevil_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configDaredevilSave },
-    { .name = "permadeath_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configHardcoreSave },
+    { .name = "hard_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configHardSave },
+    { .name = "daredevil_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configDaredevilSave },
+    { .name = "permadeath_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configHardcoreSave },
 
     // COLORS
     { .name = "COLORS", .type = CONFIG_TYPE_SECTION },
@@ -150,18 +235,36 @@ static const struct ConfigOption options[] = {
     { .name = "color_shirt_shading_r", .type = CONFIG_TYPE_UINT, .uintValue = &configColorShirt[1][0] },
     { .name = "color_shirt_shading_g", .type = CONFIG_TYPE_UINT, .uintValue = &configColorShirt[1][1] },
     { .name = "color_shirt_shading_b", .type = CONFIG_TYPE_UINT, .uintValue = &configColorShirt[1][2] },
-    { .name = "color_overalls_main_r", .type = CONFIG_TYPE_UINT, .uintValue = &configColorOveralls[0][0] },
-    { .name = "color_overalls_main_g", .type = CONFIG_TYPE_UINT, .uintValue = &configColorOveralls[0][1] },
-    { .name = "color_overalls_main_b", .type = CONFIG_TYPE_UINT, .uintValue = &configColorOveralls[0][2] },
-    { .name = "color_overalls_shading_r", .type = CONFIG_TYPE_UINT, .uintValue = &configColorOveralls[1][0] },
-    { .name = "color_overalls_shading_g", .type = CONFIG_TYPE_UINT, .uintValue = &configColorOveralls[1][1] },
-    { .name = "color_overalls_shading_b", .type = CONFIG_TYPE_UINT, .uintValue = &configColorOveralls[1][2] },
+    { .name = "color_overalls_main_r",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configColorOveralls[0][0] },
+    { .name = "color_overalls_main_g",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configColorOveralls[0][1] },
+    { .name = "color_overalls_main_b",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configColorOveralls[0][2] },
+    { .name = "color_overalls_shading_r",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configColorOveralls[1][0] },
+    { .name = "color_overalls_shading_g",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configColorOveralls[1][1] },
+    { .name = "color_overalls_shading_b",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configColorOveralls[1][2] },
     { .name = "color_gloves_main_r", .type = CONFIG_TYPE_UINT, .uintValue = &configColorGloves[0][0] },
     { .name = "color_gloves_main_g", .type = CONFIG_TYPE_UINT, .uintValue = &configColorGloves[0][1] },
     { .name = "color_gloves_main_b", .type = CONFIG_TYPE_UINT, .uintValue = &configColorGloves[0][2] },
-    { .name = "color_gloves_shading_r", .type = CONFIG_TYPE_UINT, .uintValue = &configColorGloves[1][0] },
-    { .name = "color_gloves_shading_g", .type = CONFIG_TYPE_UINT, .uintValue = &configColorGloves[1][1] },
-    { .name = "color_gloves_shading_b", .type = CONFIG_TYPE_UINT, .uintValue = &configColorGloves[1][2] },
+    { .name = "color_gloves_shading_r",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configColorGloves[1][0] },
+    { .name = "color_gloves_shading_g",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configColorGloves[1][1] },
+    { .name = "color_gloves_shading_b",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configColorGloves[1][2] },
     { .name = "color_shoes_main_r", .type = CONFIG_TYPE_UINT, .uintValue = &configColorShoes[0][0] },
     { .name = "color_shoes_main_g", .type = CONFIG_TYPE_UINT, .uintValue = &configColorShoes[0][1] },
     { .name = "color_shoes_main_b", .type = CONFIG_TYPE_UINT, .uintValue = &configColorShoes[0][2] },
@@ -180,37 +283,61 @@ static const struct ConfigOption options[] = {
     { .name = "color_hair_shading_r", .type = CONFIG_TYPE_UINT, .uintValue = &configColorHair[1][0] },
     { .name = "color_hair_shading_g", .type = CONFIG_TYPE_UINT, .uintValue = &configColorHair[1][1] },
     { .name = "color_hair_shading_b", .type = CONFIG_TYPE_UINT, .uintValue = &configColorHair[1][2] },
-    { .name = "show_cap_logo", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configShowCapLogo },
+    { .name = "show_cap_logo", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configShowCapLogo },
 
     // CHEATS
     { .name = "CHEATS", .type = CONFIG_TYPE_SECTION },
-    { .name = "level_select", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&gDebugLevelSelect },
-    { .name = "debug_movement_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configDebugMovementMode },
-    { .name = "debug_cap_changer", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configDebugCapChanger },
-    { .name = "debug_object_spawner", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configDebugObjectSpawner },
+    { .name = "level_select", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &gDebugLevelSelect },
+    { .name = "debug_movement_mode",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configDebugMovementMode },
+    { .name = "debug_cap_changer",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configDebugCapChanger },
+    { .name = "debug_object_spawner",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configDebugObjectSpawner },
     { .name = "moon_jump", .type = CONFIG_TYPE_UINT, .uintValue = &configMoonJump },
     { .name = "blj_everywhere", .type = CONFIG_TYPE_UINT, .uintValue = &configBLJEverywhere },
-    { .name = "god_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configGodMode },
-    { .name = "hyperspeed_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configHyperspeedMode },
-    { .name = "easy_bowser_throws", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configEasyBowserThrows },
-    { .name = "make_secrets_visible", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configVisibleSecrets },
-    { .name = "no_cannon_limits", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configFlexibleCannons },
-    { .name = "coins_required_for_the_coin_stars", .type = CONFIG_TYPE_UINT, .uintValue = &configCoinStarCoins },
+    { .name = "god_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configGodMode },
+    { .name = "hyperspeed_mode",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configHyperspeedMode },
+    { .name = "easy_bowser_throws",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configEasyBowserThrows },
+    { .name = "make_secrets_visible",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configVisibleSecrets },
+    { .name = "no_cannon_limits",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configFlexibleCannons },
+    { .name = "coins_required_for_the_coin_stars",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &configCoinStarCoins },
 
     // FOR FUN
     { .name = "FOR FUN", .type = CONFIG_TYPE_SECTION },
-    { .name = "rock_paper_scissors", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configRockPaperScissors },
-    { .name = "mad_penguin", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configAngryPenguin },
-    { .name = "paper_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configPaperMode },
-    { .name = "fx_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configFXMode },
-    { .name = "disable_lighting", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configDisableLighting },
+    { .name = "rock_paper_scissors",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configRockPaperScissors },
+    { .name = "mad_penguin", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configAngryPenguin },
+    { .name = "paper_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configPaperMode },
+    { .name = "fx_mode", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configFXMode },
+    { .name = "disable_lighting",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configDisableLighting },
 
     // ADVANCED
     { .name = "ADVANCED", .type = CONFIG_TYPE_SECTION },
-    { .name = "show_debug_display", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&gShowDebugText },
-    { .name = "show_debug_profiler", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&gShowProfiler },
-    { .name = "custom_camera_distance", .type = CONFIG_TYPE_FLOAT, .floatValue = &configCustomCameraDistance },
-    { .name = "zoomed_out_custom_camera_distance", .type = CONFIG_TYPE_FLOAT, .floatValue = &configCustomCameraDistanceZoomedOut },
+    { .name = "show_debug_display", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &gShowDebugText },
+    { .name = "show_debug_profiler", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &gShowProfiler },
+    { .name = "custom_camera_distance",
+      .type = CONFIG_TYPE_FLOAT,
+      .floatValue = &configCustomCameraDistance },
+    { .name = "zoomed_out_custom_camera_distance",
+      .type = CONFIG_TYPE_FLOAT,
+      .floatValue = &configCustomCameraDistanceZoomedOut },
 
     // CONTROLLER MAPPING
     { .name = "CONTROLLER MAPPING", .type = CONFIG_TYPE_SECTION },
@@ -224,10 +351,16 @@ static const struct ConfigOption options[] = {
     { .name = "button_cdown", .type = CONFIG_TYPE_UINT, .uintValue = &configButtonCDown },
     { .name = "button_cleft", .type = CONFIG_TYPE_UINT, .uintValue = &configButtonCLeft },
     { .name = "button_cright", .type = CONFIG_TYPE_UINT, .uintValue = &configButtonCRight },
-    { .name = "left_analog_stick_deadzone", .type = CONFIG_TYPE_UINT, .uintValue = &gControllerLeftDeadzone },
-    { .name = "right_analog_stick_deadzone", .type = CONFIG_TYPE_UINT, .uintValue = &gControllerRightDeadzone },
+    { .name = "left_analog_stick_deadzone",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &gControllerLeftDeadzone },
+    { .name = "right_analog_stick_deadzone",
+      .type = CONFIG_TYPE_UINT,
+      .uintValue = &gControllerRightDeadzone },
     { .name = "rumble_strength", .type = CONFIG_TYPE_FLOAT, .floatValue = &configRumbleStrength },
-    { .name = "block_non_xinput_controllers", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configBlockNonXinputControllers },
+    { .name = "block_non_xinput_controllers",
+      .type = CONFIG_TYPE_BOOL,
+      .boolValue = (bool *) &configBlockNonXinputControllers },
 
     // KEYBOARD MAPPING
     { .name = "KEYBOARD MAPPING", .type = CONFIG_TYPE_SECTION },
@@ -249,7 +382,7 @@ static const struct ConfigOption options[] = {
 
     // MOUSE
     { .name = "MOUSE", .type = CONFIG_TYPE_SECTION },
-    { .name = "mouse_support", .type = CONFIG_TYPE_BOOL, .boolValue = (bool*)&configMouseCam },
+    { .name = "mouse_support", .type = CONFIG_TYPE_BOOL, .boolValue = (bool *) &configMouseCam },
     { .name = "mouse_sensitivity", .type = CONFIG_TYPE_FLOAT, .floatValue = &configMouseSensitivity },
     { .name = "left_mouse_button_action", .type = CONFIG_TYPE_UINT, .uintValue = &configMouseLeft },
     { .name = "right_mouse_button_action", .type = CONFIG_TYPE_UINT, .uintValue = &configMouseRight },
@@ -258,177 +391,114 @@ static const struct ConfigOption options[] = {
     { .name = "mouse_wheel_down_action", .type = CONFIG_TYPE_UINT, .uintValue = &configMouseWheelDown },
 };
 
-// Reads an entire line from a file (excluding the newline character) and returns an allocated string
-// Returns NULL if no lines could be read from the file
-static char *read_file_line(FILE *file) {
-    char *buffer;
-    size_t bufferSize = 8;
-    size_t offset = 0; // offset in buffer to write
+static std::string_view trim(std::string_view s) {
+    auto is_space_or_quote = [](char c) {
+        return std::isspace(static_cast<unsigned char>(c)) || c == '"' || c == '=';
+    };
 
-    buffer = (char *) malloc(bufferSize);
-    while (1) {
-        // Read a line from the file
-        if (fgets(buffer + offset, bufferSize - offset, file) == NULL) {
-            free(buffer);
-            return NULL; // Nothing could be read.
-        }
-        offset = strlen(buffer);
-        assert(offset > 0);
-
-        // If a newline was found, remove the trailing newline and exit
-        if (buffer[offset - 1] == '\n') {
-            buffer[offset - 1] = '\0';
-            break;
-        }
-
-        if (feof(file)) // EOF was reached
-            break;
-
-        // If no newline or EOF was reached, then the whole line wasn't read.
-        bufferSize *= 2; // Increase buffer size
-        buffer = (char *) realloc(buffer, bufferSize);
-        assert(buffer != NULL);
+    // Trim from start
+    while (!s.empty() && is_space_or_quote(s.front())) {
+        s.remove_prefix(1);
     }
-
-    return buffer;
-}
-
-// Returns the position of the first character we shouldn't ignore
-static char *skip_whitespace(char *str) {
-    while (isspace(*str) || *str == '=' || *str == '\"')
-        str++;
-    return str;
-}
-
-// NULL-terminates the current whitespace-delimited word, and returns a pointer to the next word
-static char *word_split(char *str) {
-    // Precondition: str must not point to whitespace
-    assert(!isspace(*str));
-
-    if (*str == '\"')
-        str++;
-
-    // Find either the next whitespace char or end of string
-    while (!isspace(*str) && *str != '\0' && *str != '=' && *str != '\"')
-        str++;
-    if (*str == '\0') // End of string
-        return str;
-
-    // Terminate current word
-    *(str++) = '\0';
-
-    // Skip whitespace to next word
-    return skip_whitespace(str);
-}
-
-// Splits a string into words, and stores the words into the 'tokens' array
-// 'maxTokens' is the length of the 'tokens' array
-// Returns the number of tokens parsed
-static unsigned int tokenize_string(char *str, int maxTokens, char **tokens) {
-    int count = 0;
-
-    str = skip_whitespace(str);
-    while (str[0] != '\0' && count < maxTokens) {
-        if ((str[count] == ';') || (str[count] == '#'))
-            break;
-        if (str[count] == '\"') {
-            str[count]++;
-        }
-        tokens[count] = str;
-        str = word_split(str);
-        count++;
+    // Trim from end
+    while (!s.empty() && is_space_or_quote(s.back())) {
+        s.remove_suffix(1);
     }
-    return count;
+    return s;
+}
+
+static std::unordered_map<std::string_view, const ConfigOption *> create_option_map() {
+    std::unordered_map<std::string_view, const ConfigOption *> m;
+    for (unsigned int i = 0; i < ARRAY_LEN(options); i++) {
+        if (options[i].type != CONFIG_TYPE_SECTION) {
+            m[options[i].name] = &options[i];
+        }
+    }
+    return m;
 }
 
 // Loads the config file specified by 'filename'
 void configfile_load(const char *filename) {
-    FILE *file;
-    char *line;
+    std::printf("Loading configuration from '%s'\n", filename);
 
-    printf("Loading configuration from '%s'\n", filename);
-
-    file = fopen(filename, "r");
-    if (file == NULL) {
-        // Create a new config file and save defaults
-        printf("Config file '%s' not found. Creating it.\n", filename);
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::printf("Config file '%s' not found. Creating it.\n", filename);
         configfile_save(filename);
         return;
     }
 
-    // Go through each line in the file
-    while ((line = read_file_line(file)) != NULL) {
-        char *p = line;
-        char *tokens[2];
-        int numTokens;
+    static const auto option_map = create_option_map();
 
-        while (isspace(*p))
-            p++;
-        if ((*p == '[') || (*p == '\n'))
-            continue;
-        numTokens = tokenize_string(p, 2, tokens);
-        if (numTokens != 0) {
-            if (numTokens == 2) {
-                const struct ConfigOption *option = NULL;
+    std::string line;
+    while (std::getline(file, line)) {
+        std::string_view l(line);
 
-                for (unsigned int i = 0; i < ARRAY_LEN(options); i++) {
-                    if (strcmp(tokens[0], options[i].name) == 0) {
-                        option = &options[i];
-                        break;
-                    }
-                }
-                if (option == NULL)
-                    printf("unknown option '%s'\n", tokens[0]);
-                else {
-                    switch (option->type) {
-                        case CONFIG_TYPE_BOOL:
-                            if (strcmp(tokens[1], "true") == 0)
-                                *option->boolValue = true;
-                            else if (strcmp(tokens[1], "false") == 0)
-                                *option->boolValue = false;
-                            break;
-                        case CONFIG_TYPE_UINT:
-                            sscanf(tokens[1], "%u", option->uintValue);
-                            break;
-                        case CONFIG_TYPE_SINT:
-                            sscanf(tokens[1], "%d", option->sintValue);
-                            break;
-                        case CONFIG_TYPE_FLOAT:
-                            sscanf(tokens[1], "%f", option->floatValue);
-                            break;
-                        default:
-                            assert(0); // bad type
-                    }
-                    printf("option: '%s', value: '%s'\n", tokens[0], tokens[1]);
-                }
-            } else
-                puts("error: expected value");
+        // Skip leading spaces
+        while (!l.empty() && std::isspace(static_cast<unsigned char>(l.front()))) {
+            l.remove_prefix(1);
         }
-        free(line);
-    }
 
-    fclose(file);
+        if (l.empty() || l.front() == '#' || l.front() == ';' || l.front() == '[') {
+            continue;
+        }
+
+        size_t eq_pos = l.find('=');
+        if (eq_pos == std::string_view::npos) {
+            continue;
+        }
+
+        std::string_view key = trim(l.substr(0, eq_pos));
+        std::string_view val = trim(l.substr(eq_pos + 1));
+
+        if (key.empty()) {
+            continue;
+        }
+
+        auto it = option_map.find(key);
+        if (it == option_map.end()) {
+            std::printf("unknown option '%.*s'\n", static_cast<int>(key.size()), key.data());
+            continue;
+        }
+
+        const ConfigOption *option = it->second;
+        std::string val_str(val); // Null-terminated copy for conversion functions
+
+        switch (option->type) {
+            case CONFIG_TYPE_BOOL:
+                if (val == "true")
+                    *option->boolValue = true;
+                else if (val == "false")
+                    *option->boolValue = false;
+                break;
+            case CONFIG_TYPE_UINT:
+                std::sscanf(val_str.c_str(), "%u", option->uintValue);
+                break;
+            case CONFIG_TYPE_SINT:
+                std::sscanf(val_str.c_str(), "%d", option->sintValue);
+                break;
+            case CONFIG_TYPE_FLOAT:
+                std::sscanf(val_str.c_str(), "%f", option->floatValue);
+                break;
+            default:
+                assert(0); // bad type
+        }
+        std::printf("option: '%.*s', value: '%.*s'\n", static_cast<int>(key.size()), key.data(),
+                    static_cast<int>(val.size()), val.data());
+    }
 }
 
 // Writes the config file to 'filename'
 void configfile_save(const char *filename) {
-    FILE *file;
+    std::printf("Saving configuration to '%s'\n", filename);
 
-    char *dir = (char *) malloc(128);
+    std::filesystem::path filepath(filename);
+    if (filepath.has_parent_path()) {
+        std::filesystem::create_directories(filepath.parent_path());
+    }
 
-    printf("Saving configuration to '%s'\n", filename);
-
-#ifdef __linux__
-    strcat(dir, "/");
-    char* copy = strdup(filename);
-    strcat(dir, strtok(copy + 1, "/"));
-    free(copy);
-    mkdir(dir, 0777);
-#endif
-
-    file = fopen(filename, "w");
-    if (file == NULL) {
-        // error
+    std::ofstream file(filename);
+    if (!file.is_open()) {
         return;
     }
 
@@ -437,26 +507,22 @@ void configfile_save(const char *filename) {
 
         switch (option->type) {
             case CONFIG_TYPE_BOOL:
-                fprintf(file, "%s = \"%s\"\n", option->name, *option->boolValue ? "true" : "false");
+                file << option->name << " = \"" << (*option->boolValue ? "true" : "false") << "\"\n";
                 break;
             case CONFIG_TYPE_UINT:
-                fprintf(file, "%s = \"%u\"\n", option->name, *option->uintValue);
+                file << option->name << " = \"" << *option->uintValue << "\"\n";
                 break;
             case CONFIG_TYPE_SINT:
-                fprintf(file, "%s = \"%d\"\n", option->name, *option->sintValue);
+                file << option->name << " = \"" << *option->sintValue << "\"\n";
                 break;
             case CONFIG_TYPE_FLOAT:
-                fprintf(file, "%s = \"%f\"\n", option->name, *option->floatValue);
+                file << option->name << " = \"" << *option->floatValue << "\"\n";
                 break;
             case CONFIG_TYPE_SECTION:
-                /*if (i != 0)
-                    fprintf(file, "\n", option->name);*/
-                fprintf(file, "[%s]\n", option->name);
+                file << "[" << option->name << "]\n";
                 break;
             default:
                 assert(0); // unknown type
         }
     }
-
-    fclose(file);
 }
