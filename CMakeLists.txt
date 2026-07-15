@@ -5,7 +5,7 @@ set(CMAKE_C_COMPILER_TARGET x86_64-w64-windows-gnu)
 project(sm64cpp LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Configure compiler-specific options
