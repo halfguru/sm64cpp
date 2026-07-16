@@ -372,21 +372,25 @@ src/engine/math_util.cpp
 set_source_files_properties(${ENGINE_SOURCES} ${DATA_SOURCES} PROPERTIES LANGUAGE CXX)
 
 # Executable target
-add_executable(sm64cpp ${DATA_SOURCES} ${ENGINE_SOURCES} ${RESOURCES})
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/generated/assets/demo_data.c")
+    add_executable(sm64cpp ${DATA_SOURCES} ${ENGINE_SOURCES} ${RESOURCES})
 
-# Link libraries
-target_link_libraries(sm64cpp
-    PRIVATE
-    SDL2::SDL2
-    GLEW::GLEW
-    OpenGL::GL
-    pthread
-    stdc++exp
-)
+    # Link libraries
+    target_link_libraries(sm64cpp
+        PRIVATE
+        SDL2::SDL2
+        GLEW::GLEW
+        OpenGL::GL
+        pthread
+        stdc++exp
+    )
 
-# Allow duplicate symbols during transitional C to C++ build
-if (WIN32)
-    target_link_options(sm64cpp PRIVATE -Wl,--allow-multiple-definition)
+    # Allow duplicate symbols during transitional C to C++ build
+    if (WIN32)
+        target_link_options(sm64cpp PRIVATE -Wl,--allow-multiple-definition)
+    endif()
+else()
+    message(STATUS "Assets not generated (baserom not extracted). Skipping target 'sm64cpp'.")
 endif()
 # Catch2 testing
 include(FetchContent)
