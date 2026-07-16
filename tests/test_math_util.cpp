@@ -28,7 +28,8 @@ namespace {
 
 constexpr f32 kEps = 1e-4f;
 
-void require_vec3f_eq(const Vec3f &a, f32 x, f32 y, f32 z) {
+void require_vec3f_eq(const Vec3f &a, f32 x, f32 y, f32 z)
+{
     REQUIRE(std::abs(a[0] - x) < kEps);
     REQUIRE(std::abs(a[1] - y) < kEps);
     REQUIRE(std::abs(a[2] - z) < kEps);
@@ -36,7 +37,8 @@ void require_vec3f_eq(const Vec3f &a, f32 x, f32 y, f32 z) {
 
 } // namespace
 
-TEST_CASE("Vec3f - copy/set/add/sum", "[math_util][vec3f]") {
+TEST_CASE("Vec3f - copy/set/add/sum", "[math_util][vec3f]")
+{
     Vec3f a = { 1.0f, 2.0f, 3.0f };
     Vec3f b = { 4.0f, 5.0f, 6.0f };
     Vec3f dest;
@@ -54,7 +56,8 @@ TEST_CASE("Vec3f - copy/set/add/sum", "[math_util][vec3f]") {
     require_vec3f_eq(dest, 5.0f, 7.0f, 9.0f);
 }
 
-TEST_CASE("Vec3f - cross product", "[math_util][vec3f]") {
+TEST_CASE("Vec3f - cross product", "[math_util][vec3f]")
+{
     Vec3f x = { 1.0f, 0.0f, 0.0f };
     Vec3f y = { 0.0f, 1.0f, 0.0f };
     Vec3f dest;
@@ -66,13 +69,15 @@ TEST_CASE("Vec3f - cross product", "[math_util][vec3f]") {
     require_vec3f_eq(dest, 0.0f, 0.0f, -1.0f);
 }
 
-TEST_CASE("Vec3f - normalize", "[math_util][vec3f]") {
+TEST_CASE("Vec3f - normalize", "[math_util][vec3f]")
+{
     Vec3f v = { 0.0f, 3.0f, 4.0f };
     vec3f_normalize(v);
     require_vec3f_eq(v, 0.0f, 0.6f, 0.8f);
 }
 
-TEST_CASE("Vec3f <-> Vec3s conversions", "[math_util][vec3s]") {
+TEST_CASE("Vec3f <-> Vec3s conversions", "[math_util][vec3s]")
+{
     Vec3f f = { 1.4f, -2.6f, 3.5f };
     Vec3s s;
     vec3f_to_vec3s(s, f);
@@ -96,7 +101,8 @@ TEST_CASE("Vec3f <-> Vec3s conversions", "[math_util][vec3s]") {
     REQUIRE(s2[2] == 34);
 }
 
-TEST_CASE("Mat4 - identity and translate", "[math_util][mat4]") {
+TEST_CASE("Mat4 - identity and translate", "[math_util][mat4]")
+{
     Mat4 m;
     mtxf_identity(m);
     for (int r = 0; r < 4; r++)
@@ -111,7 +117,8 @@ TEST_CASE("Mat4 - identity and translate", "[math_util][mat4]") {
     REQUIRE(std::abs(m[0][0] - 1.0f) < kEps);
 }
 
-TEST_CASE("Mat4 - copy and multiply", "[math_util][mat4]") {
+TEST_CASE("Mat4 - copy and multiply", "[math_util][mat4]")
+{
     Mat4 a, b, dest;
     mtxf_identity(a);
     mtxf_identity(b);
@@ -128,7 +135,8 @@ TEST_CASE("Mat4 - copy and multiply", "[math_util][mat4]") {
     REQUIRE(std::abs(dest[3][2] - 7.0f) < kEps);
 }
 
-TEST_CASE("approach_s32 / approach_f32", "[math_util][approach]") {
+TEST_CASE("approach_s32 / approach_f32", "[math_util][approach]")
+{
     REQUIRE(approach_s32(0, 10, 3, 3) == 3);
     REQUIRE(approach_s32(8, 10, 3, 3) == 10); // clamped to target
     REQUIRE(approach_s32(20, 10, 3, 4) == 16);
@@ -138,33 +146,56 @@ TEST_CASE("approach_s32 / approach_f32", "[math_util][approach]") {
     REQUIRE(std::abs(approach_f32(0.9f, 1.0f, 0.3f, 0.3f) - 1.0f) < kEps);
 }
 
-TEST_CASE("atan2s / atan2f", "[math_util][atan]") {
+TEST_CASE("atan2s / atan2f", "[math_util][atan]")
+{
     // atan2s(y, x) returns a signed s16 angle. Values below captured from the
     // current implementation (baseline), not derived, to avoid axis-mapping
     // assumptions.
-    REQUIRE(atan2s(0, 1) == 16384);  // 0x4000
-    REQUIRE(atan2s(1, 0) == 0);      // 0x0000
+    REQUIRE(atan2s(0, 1) == 16384);   // 0x4000
+    REQUIRE(atan2s(1, 0) == 0);       // 0x0000
     REQUIRE(atan2s(0, -1) == -16384); // 0xC000
     REQUIRE(atan2s(-1, 0) == -32768); // 0x8000 (s16)
-    REQUIRE(atan2s(1, 1) == 8192);   // 0x2000 (45 degrees)
+    REQUIRE(atan2s(1, 1) == 8192);    // 0x2000 (45 degrees)
 
     REQUIRE(std::abs(atan2f(0, 1) - (M_PI / 2.0f)) < 1e-3f);
     REQUIRE(std::abs(atan2f(1, 0) - 0.0f) < 1e-3f);
 }
 
-TEST_CASE("spline - init/poll through a short curve", "[math_util][spline]") {
+TEST_CASE("spline - init/poll through a short curve", "[math_util][spline]")
+{
     // Mirror the real keyframe layout (e.g. sJumboStarKeyframes): the spline
     // looks 3 points ahead (gSplineKeyframe[2]), so the array must contain
     // enough zero-speed (s=0) terminator entries that the state machine
     // reaches CURVE_END before running off the end of the array.
     Vec4s frames[7];
-    frames[0][0] = 1000; frames[0][1] = 0;   frames[0][2] = 0;  frames[0][3] = 0;
-    frames[1][0] = 1000; frames[1][1] = 10;  frames[1][2] = 0;  frames[1][3] = 0;
-    frames[2][0] = 1000; frames[2][1] = 20;  frames[2][2] = 0;  frames[2][3] = 0;
-    frames[3][0] = 1000; frames[3][1] = 30;  frames[3][2] = 0;  frames[3][3] = 0;
-    frames[4][0] = 0;    frames[4][1] = 0;   frames[4][2] = 0;  frames[4][3] = 0;
-    frames[5][0] = 0;    frames[5][1] = 0;   frames[5][2] = 0;  frames[5][3] = 0;
-    frames[6][0] = 0;    frames[6][1] = 0;   frames[6][2] = 0;  frames[6][3] = 0;
+    frames[0][0] = 1000;
+    frames[0][1] = 0;
+    frames[0][2] = 0;
+    frames[0][3] = 0;
+    frames[1][0] = 1000;
+    frames[1][1] = 10;
+    frames[1][2] = 0;
+    frames[1][3] = 0;
+    frames[2][0] = 1000;
+    frames[2][1] = 20;
+    frames[2][2] = 0;
+    frames[2][3] = 0;
+    frames[3][0] = 1000;
+    frames[3][1] = 30;
+    frames[3][2] = 0;
+    frames[3][3] = 0;
+    frames[4][0] = 0;
+    frames[4][1] = 0;
+    frames[4][2] = 0;
+    frames[4][3] = 0;
+    frames[5][0] = 0;
+    frames[5][1] = 0;
+    frames[5][2] = 0;
+    frames[5][3] = 0;
+    frames[6][0] = 0;
+    frames[6][1] = 0;
+    frames[6][2] = 0;
+    frames[6][3] = 0;
 
     anim_spline_init(frames);
 

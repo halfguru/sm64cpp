@@ -1,0 +1,41 @@
+name: CI Build and Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-binutils
+            mingw-w64-x86_64-SDL2
+            mingw-w64-x86_64-glew
+            mingw-w64-x86_64-ninja
+
+      - name: Configure CMake
+        shell: pwsh
+        run: |
+          cmake --preset clang-ninja
+
+      - name: Build Project
+        shell: pwsh
+        run: |
+          cmake --build build/clang-ninja
+
+      - name: Run Unit Tests
+        shell: pwsh
+        run: |
+          ./build/clang-ninja/sm64cpp_test.exe

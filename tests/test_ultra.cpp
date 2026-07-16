@@ -3,7 +3,8 @@
 #include <filesystem>
 #include <fstream>
 
-TEST_CASE("Ultra - EEPROM Save/Load Roundtrip", "[ultra]") {
+TEST_CASE("Ultra - EEPROM Save/Load Roundtrip", "[ultra]")
+{
     // Ensure clean state before test
     const std::filesystem::path save_path("savedata.bin");
     if (std::filesystem::exists(save_path)) {
@@ -21,7 +22,7 @@ TEST_CASE("Ultra - EEPROM Save/Load Roundtrip", "[ultra]") {
     REQUIRE(std::filesystem::exists(save_path));
 
     // Read back a subset of data
-    u8 read_buffer[512] = {0};
+    u8 read_buffer[512] = { 0 };
     s32 read_result = osEepromLongRead(nullptr, 0, read_buffer, 512);
     REQUIRE(read_result == 0);
 

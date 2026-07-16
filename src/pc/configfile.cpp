@@ -1,319 +1,299 @@
-// configfile.cpp - handles loading and saving the configuration options
-#include <cassert>
-#include <cctype>
-#include <cstdio>
-
-#include <fstream>
-#include <string>
-#include <string_view>
-#include <unordered_map>
-#include <filesystem>
-#include <format>
-#include <iostream>
-#include <iterator>
-
 #include "configfile.hpp"
 #include "../game/settings.h"
 #include "../game/main.h"
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <unordered_map>
+#include <format>
+#include <cctype>
 
-struct ConfigOptionsSpan {
-    const ConfigOption *data;
-    size_t size;
-};
+namespace config {
 
-static ConfigOptionsSpan get_options() {
-    static const ConfigOption options[] = {
+std::vector<ConfigOption> ConfigManager::get_options(settings::Settings &settings)
+{
+    return {
         // DISPLAY
-        { .name = "DISPLAY", .value = std::monostate{} },
-        { .name = "fullscreen", .value = (bool *) &configFullscreen },
-        { .name = "default_monitor", .value = &configDefaultMonitor },
-        { .name = "vsync", .value = (bool *) &configVSync },
-        { .name = "window_width", .value = &configWindowWidth },
-        { .name = "window_height", .value = &configWindowHeight },
-        { .name = "fullscreen_display_mode", .value = &configFullscreenDisplayMode },
-        { .name = "graphics_backend", .value = &configGraphicsBackend },
+        { "DISPLAY", std::monostate{} },
+        { "fullscreen", &settings.configFullscreen },
+        { "default_monitor", &settings.configDefaultMonitor },
+        { "vsync", &settings.configVSync },
+        { "window_width", &settings.configWindowWidth },
+        { "window_height", &settings.configWindowHeight },
+        { "fullscreen_display_mode", &settings.configFullscreenDisplayMode },
+        { "graphics_backend", &settings.configGraphicsBackend },
 
         // AUDIO
-        { .name = "AUDIO", .value = std::monostate{} },
-        { .name = "overall_volume", .value = &configOverallVolume },
-        { .name = "music_volume", .value = &configSeqVolume[0] },
-        { .name = "jingle_volume", .value = &configSeqVolume[1] },
-        { .name = "sound_volume", .value = &configSeqVolume[2] },
+        { "AUDIO", std::monostate{} },
+        { "overall_volume", &settings.configOverallVolume },
+        { "music_volume", &settings.configSeqVolume[0] },
+        { "jingle_volume", &settings.configSeqVolume[1] },
+        { "sound_volume", &settings.configSeqVolume[2] },
 
         // GRAPHICS
-        { .name = "GRAPHICS", .value = std::monostate{} },
-        { .name = "internal_resolution", .value = &configInternalResolution },
-        { .name = "aspect_ratio", .value = &configAspectRatio },
-        { .name = "frame_rate", .value = &configFrameRate },
-        { .name = "anti_aliasing", .value = &configAntiAliasing },
-        { .name = "draw_distance", .value = &configDrawDistanceMultiplier },
-        { .name = "level_of_detail", .value = &configLevelOfDetail },
-        { .name = "texture_filtering", .value = &configTextureFiltering },
-        { .name = "anisotropic_filtering", .value = &configAnisotropicFiltering },
-        { .name = "noise_type", .value = &configNoiseType },
-        { .name = "n64_blur", .value = (bool *) &configN64Blur },
+        { "GRAPHICS", std::monostate{} },
+        { "internal_resolution", &settings.configInternalResolution },
+        { "aspect_ratio", &settings.configAspectRatio },
+        { "frame_rate", &settings.configFrameRate },
+        { "anti_aliasing", &settings.configAntiAliasing },
+        { "draw_distance", &settings.configDrawDistanceMultiplier },
+        { "level_of_detail", &settings.configLevelOfDetail },
+        { "texture_filtering", &settings.configTextureFiltering },
+        { "anisotropic_filtering", &settings.configAnisotropicFiltering },
+        { "noise_type", &settings.configNoiseType },
+        { "n64_blur", &settings.configN64Blur },
 
         // CONTROLS
-        { .name = "CONTROLS", .value = std::monostate{} },
-        { .name = "improved_controls", .value = (bool *) &configImprovedControls },
-        { .name = "improved_swimming", .value = (bool *) &configImprovedSwimming },
-        { .name = "improved_hanging", .value = (bool *) &configImprovedHanging },
-        { .name = "enemy_bouncing", .value = (bool *) &configEnemyBouncing },
-        { .name = "dpad_controls", .value = (bool *) &configDpadControls },
-        { .name = "full_air_control", .value = (bool *) &configFullAirControl },
+        { "CONTROLS", std::monostate{} },
+        { "improved_controls", &settings.configImprovedControls },
+        { "improved_swimming", &settings.configImprovedSwimming },
+        { "improved_hanging", &settings.configImprovedHanging },
+        { "enemy_bouncing", &settings.configEnemyBouncing },
+        { "dpad_controls", &settings.configDpadControls },
+        { "full_air_control", &settings.configFullAirControl },
 
         // GAMEPLAY
-        { .name = "GAMEPLAY", .value = std::monostate{} },
-        { .name = "fix_gameplay_bugs", .value = &configApplyBugFixes },
-        { .name = "save_lives_to_save_file", .value = (bool *) &configSaveLives },
-        { .name = "make_items_respawn", .value = (bool *) &configRespawnCertainItems },
-        { .name = "remove_inconvenient_warps", .value = (bool *) &configRemoveAnnoyingWarps },
-        { .name = "improved_powerups", .value = (bool *) &configBetterPowerups },
-        { .name = "improved_enemies", .value = (bool *) &configBetterEnemies },
-        { .name = "improved_npcs", .value = (bool *) &configTalkNPCs },
-        { .name = "improved_blast_away_the_wall", .value = (bool *) &configBetterBlastAwayTheWall },
-        { .name = "bring_mips_back", .value = (bool *) &configBringMipsBack },
-        { .name = "disable_fall_damage", .value = (bool *) &configDisableFallDamage },
-        { .name = "allow_leaving_the_course_at_any_time", .value = (bool *) &configLeaveAnyTime },
+        { "GAMEPLAY", std::monostate{} },
+        { "fix_gameplay_bugs", &settings.configApplyBugFixes },
+        { "save_lives_to_save_file", &settings.configSaveLives },
+        { "make_items_respawn", &settings.configRespawnCertainItems },
+        { "remove_inconvenient_warps", &settings.configRemoveAnnoyingWarps },
+        { "improved_powerups", &settings.configBetterPowerups },
+        { "improved_enemies", &settings.configBetterEnemies },
+        { "improved_npcs", &settings.configTalkNPCs },
+        { "improved_blast_away_the_wall", &settings.configBetterBlastAwayTheWall },
+        { "bring_mips_back", &settings.configBringMipsBack },
+        { "disable_fall_damage", &settings.configDisableFallDamage },
+        { "allow_leaving_the_course_at_any_time", &settings.configLeaveAnyTime },
 
         // PROGRESSION
-        { .name = "PROGRESSION", .value = std::monostate{} },
-        { .name = "tie_bowsers_sub_to_missions", .value = (bool *) &configBowsersSub },
-        { .name = "always_stay_in_course", .value = &configStayInCourse },
-        { .name = "skip_mission_select", .value = (bool *) &configSkipMissionSelect },
-        { .name = "auto_switch_to_the_next_mission", .value = (bool *) &configSwitchToNextMission },
-        { .name = "skip_cutscenes", .value = (bool *) &configSkipCutscenes },
+        { "PROGRESSION", std::monostate{} },
+        { "tie_bowsers_sub_to_missions", &settings.configBowsersSub },
+        { "always_stay_in_course", &settings.configStayInCourse },
+        { "skip_mission_select", &settings.configSkipMissionSelect },
+        { "auto_switch_to_the_next_mission", &settings.configSwitchToNextMission },
+        { "skip_cutscenes", &settings.configSkipCutscenes },
 
         // CAMERA
-        { .name = "CAMERA", .value = std::monostate{} },
-        { .name = "default_camera_mode", .value = &configDefaultCameraMode },
-        { .name = "alternate_camera_mode", .value = &configAlternateCameraMode },
-        { .name = "horizontal_analog_camera", .value = (bool *) &configImprovedCamera },
-        { .name = "vertical_analog_camera", .value = (bool *) &configVerticalCamera },
-        { .name = "improved_cbutton_camera", .value = (bool *) &configImprovedCButtonCamera },
-        { .name = "center_camera_button", .value = (bool *) &configCenterCameraButton },
-        { .name = "invert_horizontal_camera_controls", .value = (bool *) &configInvertedCamera },
-        { .name = "invert_vertical_camera_controls", .value = (bool *) &configInvertedVerticalCamera },
-        { .name = "analog_camera_speed", .value = &configCameraSpeed },
-        { .name = "additional_camera_distance", .value = &configAdditionalCameraDistance },
-        { .name = "additional_fov", .value = &configAdditionalFOV },
+        { "CAMERA", std::monostate{} },
+        { "default_camera_mode", &settings.configDefaultCameraMode },
+        { "alternate_camera_mode", &settings.configAlternateCameraMode },
+        { "horizontal_analog_camera", &settings.configImprovedCamera },
+        { "vertical_analog_camera", &settings.configVerticalCamera },
+        { "improved_cbutton_camera", &settings.configImprovedCButtonCamera },
+        { "center_camera_button", &settings.configCenterCameraButton },
+        { "invert_horizontal_camera_controls", &settings.configInvertedCamera },
+        { "invert_vertical_camera_controls", &settings.configInvertedVerticalCamera },
+        { "analog_camera_speed", &settings.configCameraSpeed },
+        { "additional_camera_distance", &settings.configAdditionalCameraDistance },
+        { "additional_fov", &settings.configAdditionalFOV },
 
         // HUD AND UI
-        { .name = "HUD AND UI", .value = std::monostate{} },
-        { .name = "fix_text_typos", .value = (bool *) &configFixTextTypos },
-        { .name = "add_quit_option", .value = (bool *) &configQuitOption },
-        { .name = "hud_layout", .value = &configHudLayout },
-        { .name = "4by3_hud", .value = (bool *) &config4by3Hud },
-        { .name = "show_the_collected_stars", .value = (bool *) &configHudStars },
-        { .name = "add_zeroes_to_counters", .value = (bool *) &configAddZeroes },
-        { .name = "always_show_the_100_coin_star", .value = (bool *) &configShow100CoinStar },
-        { .name = "always_show_the_health_meter", .value = (bool *) &configAlwaysShowHealth },
-        { .name = "hud_filtering", .value = (bool *) &configHUDFiltering },
-        { .name = "hide_hud", .value = (bool *) &configHideHud },
+        { "HUD AND UI", std::monostate{} },
+        { "fix_text_typos", &settings.configFixTextTypos },
+        { "add_quit_option", &settings.configQuitOption },
+        { "hud_layout", &settings.configHudLayout },
+        { "4by3_hud", &settings.config4by3Hud },
+        { "show_the_collected_stars", &settings.configHudStars },
+        { "add_zeroes_to_counters", &settings.configAddZeroes },
+        { "always_show_the_100_coin_star", &settings.configShow100CoinStar },
+        { "always_show_the_health_meter", &settings.configAlwaysShowHealth },
+        { "hud_filtering", &settings.configHUDFiltering },
+        { "hide_hud", &settings.configHideHud },
 
         // EXTRA MOVES
-        { .name = "EXTRA MOVES", .value = std::monostate{} },
-        { .name = "wall_sliding", .value = (bool *) &configWallSliding },
-        { .name = "ground_pound_jump", .value = (bool *) &configGroundPoundJump },
-        { .name = "sunshine_dive_hop", .value = (bool *) &configSunshineDive },
-        { .name = "odyssey_ground_pound_dive", .value = (bool *) &configOdysseyDive },
-        { .name = "odyssey_rolling", .value = (bool *) &configRolling },
-        { .name = "flashback_ground_pound", .value = (bool *) &configFlashbackGroundPound },
+        { "EXTRA MOVES", std::monostate{} },
+        { "wall_sliding", &settings.configWallSliding },
+        { "ground_pound_jump", &settings.configGroundPoundJump },
+        { "sunshine_dive_hop", &settings.configSunshineDive },
+        { "odyssey_ground_pound_dive", &settings.configOdysseyDive },
+        { "odyssey_rolling", &settings.configRolling },
+        { "flashback_ground_pound", &settings.configFlashbackGroundPound },
 
         // RESTORATIONS
-        { .name = "RESTORATIONS", .value = std::monostate{} },
-        { .name = "enable_the_unused_pyramid_cutscene",
-          .value = (bool *) &configUnusedPyramidCutscene },
-        { .name = "restore_unused_sound_effects", .value = (bool *) &configRestoreUnusedSounds },
-        { .name = "restore_mother_penguins_sad_eyes", .value = (bool *) &configPenguinSadEyes },
-        { .name = "replace_triple_jump_with_twirl", .value = (bool *) &configTwirlTripleJump },
-        { .name = "use_beta_like_camera", .value = (bool *) &configBetaLikeCamera },
-        { .name = "make_mario_sparkle_at_course_start", .value = (bool *) &configSpawnSparkles },
-        { .name = "replace_keys_with_stars_when_collected",
-          .value = (bool *) &configReplaceKeysWithStars },
+        { "RESTORATIONS", std::monostate{} },
+        { "enable_the_unused_pyramid_cutscene", &settings.configUnusedPyramidCutscene },
+        { "restore_unused_sound_effects", &settings.configRestoreUnusedSounds },
+        { "restore_mother_penguins_sad_eyes", &settings.configPenguinSadEyes },
+        { "replace_triple_jump_with_twirl", &settings.configTwirlTripleJump },
+        { "use_beta_like_camera", &settings.configBetaLikeCamera },
+        { "make_mario_sparkle_at_course_start", &settings.configSpawnSparkles },
+        { "replace_keys_with_stars_when_collected", &settings.configReplaceKeysWithStars },
 
         // BONUS MODES
-        { .name = "BONUS MODES", .value = std::monostate{} },
-        { .name = "casual_mode", .value = (bool *) &configCasualMode },
-        { .name = "infinite_lives_mode", .value = &configLifeMode },
-        { .name = "encore_mode", .value = &configEncoreMode },
-        { .name = "invisible_mode", .value = (bool *) &configInvisibleMode },
-        { .name = "no_healing_mode", .value = (bool *) &configNoHealingMode },
-        { .name = "green_demon_mode", .value = &configGreenDemon },
-        { .name = "hard_mode", .value = (bool *) &configHardSave },
-        { .name = "daredevil_mode", .value = (bool *) &configDaredevilSave },
-        { .name = "permadeath_mode", .value = (bool *) &configHardcoreSave },
+        { "BONUS MODES", std::monostate{} },
+        { "casual_mode", &settings.configCasualMode },
+        { "infinite_lives_mode", &settings.configLifeMode },
+        { "encore_mode", &settings.configEncoreMode },
+        { "invisible_mode", &settings.configInvisibleMode },
+        { "no_healing_mode", &settings.configNoHealingMode },
+        { "green_demon_mode", &settings.configGreenDemon },
+        { "hard_mode", &settings.configHardSave },
+        { "daredevil_mode", &settings.configDaredevilSave },
+        { "permadeath_mode", &settings.configHardcoreSave },
 
         // COLORS
-        { .name = "COLORS", .value = std::monostate{} },
-        { .name = "color_palette", .value = &configColorPalette },
-        { .name = "color_cap_main_r", .value = &configColorCap[0][0] },
-        { .name = "color_cap_main_g", .value = &configColorCap[0][1] },
-        { .name = "color_cap_main_b", .value = &configColorCap[0][2] },
-        { .name = "color_cap_shading_r", .value = &configColorCap[1][0] },
-        { .name = "color_cap_shading_g", .value = &configColorCap[1][1] },
-        { .name = "color_cap_shading_b", .value = &configColorCap[1][2] },
-        { .name = "color_shirt_main_r", .value = &configColorShirt[0][0] },
-        { .name = "color_shirt_main_g", .value = &configColorShirt[0][1] },
-        { .name = "color_shirt_main_b", .value = &configColorShirt[0][2] },
-        { .name = "color_shirt_shading_r", .value = &configColorShirt[1][0] },
-        { .name = "color_shirt_shading_g", .value = &configColorShirt[1][1] },
-        { .name = "color_shirt_shading_b", .value = &configColorShirt[1][2] },
-        { .name = "color_overalls_main_r", .value = &configColorOveralls[0][0] },
-        { .name = "color_overalls_main_g", .value = &configColorOveralls[0][1] },
-        { .name = "color_overalls_main_b", .value = &configColorOveralls[0][2] },
-        { .name = "color_overalls_shading_r", .value = &configColorOveralls[1][0] },
-        { .name = "color_overalls_shading_g", .value = &configColorOveralls[1][1] },
-        { .name = "color_overalls_shading_b", .value = &configColorOveralls[1][2] },
-        { .name = "color_gloves_main_r", .value = &configColorGloves[0][0] },
-        { .name = "color_gloves_main_g", .value = &configColorGloves[0][1] },
-        { .name = "color_gloves_main_b", .value = &configColorGloves[0][2] },
-        { .name = "color_gloves_shading_r", .value = &configColorGloves[1][0] },
-        { .name = "color_gloves_shading_g", .value = &configColorGloves[1][1] },
-        { .name = "color_gloves_shading_b", .value = &configColorGloves[1][2] },
-        { .name = "color_shoes_main_r", .value = &configColorShoes[0][0] },
-        { .name = "color_shoes_main_g", .value = &configColorShoes[0][1] },
-        { .name = "color_shoes_main_b", .value = &configColorShoes[0][2] },
-        { .name = "color_shoes_shading_r", .value = &configColorShoes[1][0] },
-        { .name = "color_shoes_shading_g", .value = &configColorShoes[1][1] },
-        { .name = "color_shoes_shading_b", .value = &configColorShoes[1][2] },
-        { .name = "color_skin_main_r", .value = &configColorSkin[0][0] },
-        { .name = "color_skin_main_g", .value = &configColorSkin[0][1] },
-        { .name = "color_skin_main_b", .value = &configColorSkin[0][2] },
-        { .name = "color_skin_shading_r", .value = &configColorSkin[1][0] },
-        { .name = "color_skin_shading_g", .value = &configColorSkin[1][1] },
-        { .name = "color_skin_shading_b", .value = &configColorSkin[1][2] },
-        { .name = "color_hair_main_r", .value = &configColorHair[0][0] },
-        { .name = "color_hair_main_g", .value = &configColorHair[0][1] },
-        { .name = "color_hair_main_b", .value = &configColorHair[0][2] },
-        { .name = "color_hair_shading_r", .value = &configColorHair[1][0] },
-        { .name = "color_hair_shading_g", .value = &configColorHair[1][1] },
-        { .name = "color_hair_shading_b", .value = &configColorHair[1][2] },
-        { .name = "show_cap_logo", .value = (bool *) &configShowCapLogo },
+        { "COLORS", std::monostate{} },
+        { "color_palette", &settings.configColorPalette },
+        { "color_cap_main_r", &settings.configColorCap[0][0] },
+        { "color_cap_main_g", &settings.configColorCap[0][1] },
+        { "color_cap_main_b", &settings.configColorCap[0][2] },
+        { "color_cap_shading_r", &settings.configColorCap[1][0] },
+        { "color_cap_shading_g", &settings.configColorCap[1][1] },
+        { "color_cap_shading_b", &settings.configColorCap[1][2] },
+        { "color_shirt_main_r", &settings.configColorShirt[0][0] },
+        { "color_shirt_main_g", &settings.configColorShirt[0][1] },
+        { "color_shirt_main_b", &settings.configColorShirt[0][2] },
+        { "color_shirt_shading_r", &settings.configColorShirt[1][0] },
+        { "color_shirt_shading_g", &settings.configColorShirt[1][1] },
+        { "color_shirt_shading_b", &settings.configColorShirt[1][2] },
+        { "color_overalls_main_r", &settings.configColorOveralls[0][0] },
+        { "color_overalls_main_g", &settings.configColorOveralls[0][1] },
+        { "color_overalls_main_b", &settings.configColorOveralls[0][2] },
+        { "color_overalls_shading_r", &settings.configColorOveralls[1][0] },
+        { "color_overalls_shading_g", &settings.configColorOveralls[1][1] },
+        { "color_overalls_shading_b", &settings.configColorOveralls[1][2] },
+        { "color_gloves_main_r", &settings.configColorGloves[0][0] },
+        { "color_gloves_main_g", &settings.configColorGloves[0][1] },
+        { "color_gloves_main_b", &settings.configColorGloves[0][2] },
+        { "color_gloves_shading_r", &settings.configColorGloves[1][0] },
+        { "color_gloves_shading_g", &settings.configColorGloves[1][1] },
+        { "color_gloves_shading_b", &settings.configColorGloves[1][2] },
+        { "color_shoes_main_r", &settings.configColorShoes[0][0] },
+        { "color_shoes_main_g", &settings.configColorShoes[0][1] },
+        { "color_shoes_main_b", &settings.configColorShoes[0][2] },
+        { "color_shoes_shading_r", &settings.configColorShoes[1][0] },
+        { "color_shoes_shading_g", &settings.configColorShoes[1][1] },
+        { "color_shoes_shading_b", &settings.configColorShoes[1][2] },
+        { "color_skin_main_r", &settings.configColorSkin[0][0] },
+        { "color_skin_main_g", &settings.configColorSkin[0][1] },
+        { "color_skin_main_b", &settings.configColorSkin[0][2] },
+        { "color_skin_shading_r", &settings.configColorSkin[1][0] },
+        { "color_skin_shading_g", &settings.configColorSkin[1][1] },
+        { "color_skin_shading_b", &settings.configColorSkin[1][2] },
+        { "color_hair_main_r", &settings.configColorHair[0][0] },
+        { "color_hair_main_g", &settings.configColorHair[0][1] },
+        { "color_hair_main_b", &settings.configColorHair[0][2] },
+        { "color_hair_shading_r", &settings.configColorHair[1][0] },
+        { "color_hair_shading_g", &settings.configColorHair[1][1] },
+        { "color_hair_shading_b", &settings.configColorHair[1][2] },
+        { "show_cap_logo", &settings.configShowCapLogo },
 
         // CHEATS
-        { .name = "CHEATS", .value = std::monostate{} },
-        { .name = "level_select", .value = (bool *) &gDebugLevelSelect },
-        { .name = "debug_movement_mode", .value = (bool *) &configDebugMovementMode },
-        { .name = "debug_cap_changer", .value = (bool *) &configDebugCapChanger },
-        { .name = "debug_object_spawner", .value = (bool *) &configDebugObjectSpawner },
-        { .name = "moon_jump", .value = &configMoonJump },
-        { .name = "blj_everywhere", .value = &configBLJEverywhere },
-        { .name = "god_mode", .value = (bool *) &configGodMode },
-        { .name = "hyperspeed_mode", .value = (bool *) &configHyperspeedMode },
-        { .name = "easy_bowser_throws", .value = (bool *) &configEasyBowserThrows },
-        { .name = "make_secrets_visible", .value = (bool *) &configVisibleSecrets },
-        { .name = "no_cannon_limits", .value = (bool *) &configFlexibleCannons },
-        { .name = "coins_required_for_the_coin_stars", .value = &configCoinStarCoins },
+        { "CHEATS", std::monostate{} },
+        { "level_select", (bool *) &gDebugLevelSelect },
+        { "debug_movement_mode", &settings.configDebugMovementMode },
+        { "debug_cap_changer", &settings.configDebugCapChanger },
+        { "debug_object_spawner", &settings.configDebugObjectSpawner },
+        { "moon_jump", &settings.configMoonJump },
+        { "blj_everywhere", &settings.configBLJEverywhere },
+        { "god_mode", &settings.configGodMode },
+        { "hyperspeed_mode", &settings.configHyperspeedMode },
+        { "easy_bowser_throws", &settings.configEasyBowserThrows },
+        { "make_secrets_visible", &settings.configVisibleSecrets },
+        { "no_cannon_limits", &settings.configFlexibleCannons },
+        { "coins_required_for_the_coin_stars", &settings.configCoinStarCoins },
 
         // FOR FUN
-        { .name = "FOR FUN", .value = std::monostate{} },
-        { .name = "rock_paper_scissors", .value = (bool *) &configRockPaperScissors },
-        { .name = "mad_penguin", .value = (bool *) &configAngryPenguin },
-        { .name = "paper_mode", .value = (bool *) &configPaperMode },
-        { .name = "fx_mode", .value = (bool *) &configFXMode },
-        { .name = "disable_lighting", .value = (bool *) &configDisableLighting },
+        { "FOR FUN", std::monostate{} },
+        { "rock_paper_scissors", &settings.configRockPaperScissors },
+        { "mad_penguin", &settings.configAngryPenguin },
+        { "paper_mode", &settings.configPaperMode },
+        { "fx_mode", &settings.configFXMode },
+        { "disable_lighting", &settings.configDisableLighting },
 
         // ADVANCED
-        { .name = "ADVANCED", .value = std::monostate{} },
-        { .name = "show_debug_display", .value = (bool *) &gShowDebugText },
-        { .name = "show_debug_profiler", .value = (bool *) &gShowProfiler },
-        { .name = "custom_camera_distance", .value = &configCustomCameraDistance },
-        { .name = "zoomed_out_custom_camera_distance", .value = &configCustomCameraDistanceZoomedOut },
+        { "ADVANCED", std::monostate{} },
+        { "show_debug_display", (bool *) &gShowDebugText },
+        { "show_debug_profiler", (bool *) &gShowProfiler },
+        { "custom_camera_distance", &settings.configCustomCameraDistance },
+        { "zoomed_out_custom_camera_distance", &settings.configCustomCameraDistanceZoomedOut },
 
         // CONTROLLER MAPPING
-        { .name = "CONTROLLER MAPPING", .value = std::monostate{} },
-        { .name = "button_a", .value = &configButtonA },
-        { .name = "button_b", .value = &configButtonB },
-        { .name = "button_start", .value = &configButtonStart },
-        { .name = "button_l", .value = &configButtonL },
-        { .name = "button_r", .value = &configButtonR },
-        { .name = "button_z", .value = &configButtonZ },
-        { .name = "button_cup", .value = &configButtonCUp },
-        { .name = "button_cdown", .value = &configButtonCDown },
-        { .name = "button_cleft", .value = &configButtonCLeft },
-        { .name = "button_cright", .value = &configButtonCRight },
-        { .name = "left_analog_stick_deadzone", .value = &gControllerLeftDeadzone },
-        { .name = "right_analog_stick_deadzone", .value = &gControllerRightDeadzone },
-        { .name = "rumble_strength", .value = &configRumbleStrength },
-        { .name = "block_non_xinput_controllers", .value = (bool *) &configBlockNonXinputControllers },
+        { "CONTROLLER MAPPING", std::monostate{} },
+        { "button_a", &settings.configButtonA },
+        { "button_b", &settings.configButtonB },
+        { "button_start", &settings.configButtonStart },
+        { "button_l", &settings.configButtonL },
+        { "button_r", &settings.configButtonR },
+        { "button_z", &settings.configButtonZ },
+        { "button_cup", &settings.configButtonCUp },
+        { "button_cdown", &settings.configButtonCDown },
+        { "button_cleft", &settings.configButtonCLeft },
+        { "button_cright", &settings.configButtonCRight },
+        { "left_analog_stick_deadzone", &gControllerLeftDeadzone },
+        { "right_analog_stick_deadzone", &gControllerRightDeadzone },
+        { "rumble_strength", &settings.configRumbleStrength },
+        { "block_non_xinput_controllers", &settings.configBlockNonXinputControllers },
 
         // KEYBOARD MAPPING
-        { .name = "KEYBOARD MAPPING", .value = std::monostate{} },
-        { .name = "key_a", .value = &configKeyA },
-        { .name = "key_b", .value = &configKeyB },
-        { .name = "key_start", .value = &configKeyStart },
-        { .name = "key_l", .value = &configKeyL },
-        { .name = "key_r", .value = &configKeyR },
-        { .name = "key_z", .value = &configKeyZ },
-        { .name = "key_cup", .value = &configKeyCUp },
-        { .name = "key_cdown", .value = &configKeyCDown },
-        { .name = "key_cleft", .value = &configKeyCLeft },
-        { .name = "key_cright", .value = &configKeyCRight },
-        { .name = "key_stickup", .value = &configKeyStickUp },
-        { .name = "key_stickdown", .value = &configKeyStickDown },
-        { .name = "key_stickleft", .value = &configKeyStickLeft },
-        { .name = "key_stickright", .value = &configKeyStickRight },
-        { .name = "key_walktrigger", .value = &configKeyWalk },
+        { "KEYBOARD MAPPING", std::monostate{} },
+        { "key_a", &settings.configKeyA },
+        { "key_b", &settings.configKeyB },
+        { "key_start", &settings.configKeyStart },
+        { "key_l", &settings.configKeyL },
+        { "key_r", &settings.configKeyR },
+        { "key_z", &settings.configKeyZ },
+        { "key_cup", &settings.configKeyCUp },
+        { "key_cdown", &settings.configKeyCDown },
+        { "key_cleft", &settings.configKeyCLeft },
+        { "key_cright", &settings.configKeyCRight },
+        { "key_stickup", &settings.configKeyStickUp },
+        { "key_stickdown", &settings.configKeyStickDown },
+        { "key_stickleft", &settings.configKeyStickLeft },
+        { "key_stickright", &settings.configKeyStickRight },
+        { "key_walktrigger", &settings.configKeyWalk },
 
         // MOUSE
-        { .name = "MOUSE", .value = std::monostate{} },
-        { .name = "mouse_support", .value = (bool *) &configMouseCam },
-        { .name = "mouse_sensitivity", .value = &configMouseSensitivity },
-        { .name = "left_mouse_button_action", .value = &configMouseLeft },
-        { .name = "right_mouse_button_action", .value = &configMouseRight },
-        { .name = "middle_mouse_button_action", .value = &configMouseMiddle },
-        { .name = "mouse_wheel_up_action", .value = &configMouseWheelUp },
-        { .name = "mouse_wheel_down_action", .value = &configMouseWheelDown },
+        { "MOUSE", std::monostate{} },
+        { "mouse_support", &settings.configMouseCam },
+        { "mouse_sensitivity", &settings.configMouseSensitivity },
+        { "left_mouse_button_action", &settings.configMouseLeft },
+        { "right_mouse_button_action", &settings.configMouseRight },
+        { "middle_mouse_button_action", &settings.configMouseMiddle },
+        { "mouse_wheel_up_action", &settings.configMouseWheelUp },
+        { "mouse_wheel_down_action", &settings.configMouseWheelDown },
     };
-    return { options, std::size(options) };
 }
 
-static std::string_view trim(std::string_view s) {
+static std::string_view trim(std::string_view s)
+{
     auto is_space_or_quote = [](char c) {
         return std::isspace(static_cast<unsigned char>(c)) || c == '"' || c == '=';
     };
 
-    // Trim from start
     while (!s.empty() && is_space_or_quote(s.front())) {
         s.remove_prefix(1);
     }
-    // Trim from end
     while (!s.empty() && is_space_or_quote(s.back())) {
         s.remove_suffix(1);
     }
     return s;
 }
 
-static std::unordered_map<std::string_view, const ConfigOption *> create_option_map() {
-    std::unordered_map<std::string_view, const ConfigOption *> m;
-    auto options = get_options();
-    for (unsigned int i = 0; i < options.size; i++) {
-        if (!std::holds_alternative<std::monostate>(options.data[i].value)) {
-            m[options.data[i].name] = &options.data[i];
-        }
-    }
-    return m;
-}
-
-// Loads the config file specified by 'filename'
-void configfile_load(const std::filesystem::path &filename) {
+void ConfigManager::load(const std::filesystem::path &filename, settings::Settings &settings)
+{
     std::cout << std::format("Loading configuration from '{}'\n", filename.string());
 
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cout << std::format("Config file '{}' not found. Creating it.\n", filename.string());
-        configfile_save(filename);
+        save(filename, settings);
         return;
     }
 
-    static const auto option_map = create_option_map();
+    auto options = get_options(settings);
+    std::unordered_map<std::string_view, const ConfigOption *> option_map;
+    for (const auto &opt : options) {
+        if (!std::holds_alternative<std::monostate>(opt.value)) {
+            option_map[opt.name] = &opt;
+        }
+    }
 
     std::string line;
     while (std::getline(file, line)) {
         std::string_view l(line);
 
-        // Skip leading spaces
         while (!l.empty() && std::isspace(static_cast<unsigned char>(l.front()))) {
             l.remove_prefix(1);
         }
@@ -345,17 +325,13 @@ void configfile_load(const std::filesystem::path &filename) {
         }
 
         const ConfigOption *option = it->second;
-        std::string val_str(val); // Null-terminated copy for conversion functions
+        std::string val_str(val);
 
-        // Type-safe dispatch using std::visit to parse the setting value
         std::visit(
             [&val, &val_str](auto &&valPtr) {
                 using T = std::decay_t<decltype(valPtr)>;
                 if constexpr (std::is_same_v<T, std::monostate>) {
-                    // std::monostate represents an INI section heading; no value parsing needed.
                 } else {
-                    // valPtr is guaranteed to be a pointer type here. Resolve its underlying value
-                    // type.
                     using ValType = std::decay_t<decltype(*valPtr)>;
                     if constexpr (std::is_same_v<ValType, bool>) {
                         if (val == "true")
@@ -377,8 +353,8 @@ void configfile_load(const std::filesystem::path &filename) {
     }
 }
 
-// Writes the config file to 'filename'
-void configfile_save(const std::filesystem::path &filename) {
+void ConfigManager::save(const std::filesystem::path &filename, settings::Settings &settings)
+{
     std::cout << std::format("Saving configuration to '{}'\n", filename.string());
 
     if (filename.has_parent_path()) {
@@ -390,31 +366,28 @@ void configfile_save(const std::filesystem::path &filename) {
         return;
     }
 
-    auto options = get_options();
-    for (unsigned int i = 0; i < options.size; i++) {
-        const struct ConfigOption *option = &options.data[i];
-
-        // Type-safe dispatch using std::visit to serialize the setting value
+    auto options = get_options(settings);
+    for (const auto &opt : options) {
         std::visit(
-            [&file, option](auto &&valPtr) {
+            [&file, &opt](auto &&valPtr) {
                 using T = std::decay_t<decltype(valPtr)>;
                 if constexpr (std::is_same_v<T, std::monostate>) {
-                    // Write section division header
-                    file << "[" << option->name << "]\n";
+                    file << "[" << opt.name << "]\n";
                 } else {
-                    // Write the option value wrapped in double quotes
                     using ValType = std::decay_t<decltype(*valPtr)>;
                     if constexpr (std::is_same_v<ValType, bool>) {
-                        file << option->name << " = \"" << (*valPtr ? "true" : "false") << "\"\n";
+                        file << opt.name << " = \"" << (*valPtr ? "true" : "false") << "\"\n";
                     } else if constexpr (std::is_same_v<ValType, unsigned int>) {
-                        file << option->name << " = \"" << *valPtr << "\"\n";
+                        file << opt.name << " = \"" << *valPtr << "\"\n";
                     } else if constexpr (std::is_same_v<ValType, int>) {
-                        file << option->name << " = \"" << *valPtr << "\"\n";
+                        file << opt.name << " = \"" << *valPtr << "\"\n";
                     } else if constexpr (std::is_same_v<ValType, float>) {
-                        file << option->name << " = \"" << *valPtr << "\"\n";
+                        file << opt.name << " = \"" << *valPtr << "\"\n";
                     }
                 }
             },
-            option->value);
+            opt.value);
     }
 }
+
+} // namespace config

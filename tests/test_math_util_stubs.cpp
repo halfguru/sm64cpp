@@ -18,12 +18,18 @@
 #include "engine/surface_collision.h"
 
 // From src/engine/surface_collision.c (used by mtxf_align_terrain_triangle)
-f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
-    (void)xPos; (void)yPos; (void)zPos; (void)pfloor;
+f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor)
+{
+    (void) xPos;
+    (void) yPos;
+    (void) zPos;
+    (void) pfloor;
     return 0.0f;
 }
 
 // From src/PR/libultra (used by mtxf_to_mtx under AVOID_UB)
-void guMtxF2L(float mf[4][4], Mtx *m) {
-    (void)mf; (void)m;
+void guMtxF2L(float mf[4][4], Mtx *m)
+{
+    (void) mf;
+    (void) m;
 }

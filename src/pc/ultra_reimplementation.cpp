@@ -24,12 +24,14 @@ extern OSMgrArgs piMgrArgs;
 u64 osClockRate = 62500000;
 
 s32 osPiStartDma(UNUSED OSIoMesg *mb, UNUSED s32 priority, UNUSED s32 direction, uintptr_t devAddr,
-                 void *vAddr, size_t nbytes, UNUSED OSMesgQueue *mq) {
+                 void *vAddr, size_t nbytes, UNUSED OSMesgQueue *mq)
+{
     memcpy(vAddr, (const void *) devAddr, nbytes);
     return 0;
 }
 
-void osCreateMesgQueue(OSMesgQueue *mq, OSMesg *msgBuf, s32 count) {
+void osCreateMesgQueue(OSMesgQueue *mq, OSMesg *msgBuf, s32 count)
+{
     mq->validCount = 0;
     mq->first = 0;
     mq->msgCount = count;
@@ -37,12 +39,15 @@ void osCreateMesgQueue(OSMesgQueue *mq, OSMesg *msgBuf, s32 count) {
     return;
 }
 
-void osSetEventMesg(UNUSED OSEvent e, UNUSED OSMesgQueue *mq, UNUSED OSMesg msg) {
+void osSetEventMesg(UNUSED OSEvent e, UNUSED OSMesgQueue *mq, UNUSED OSMesg msg)
+{
 }
-s32 osJamMesg(UNUSED OSMesgQueue *mq, UNUSED OSMesg msg, UNUSED s32 flag) {
+s32 osJamMesg(UNUSED OSMesgQueue *mq, UNUSED OSMesg msg, UNUSED s32 flag)
+{
     return 0;
 }
-s32 osSendMesg(UNUSED OSMesgQueue *mq, UNUSED OSMesg msg, UNUSED s32 flag) {
+s32 osSendMesg(UNUSED OSMesgQueue *mq, UNUSED OSMesg msg, UNUSED s32 flag)
+{
 #if defined(VERSION_EU) || defined(VERSION_SH)
     s32 index;
     if (mq->validCount >= mq->msgCount) {
@@ -54,7 +59,8 @@ s32 osSendMesg(UNUSED OSMesgQueue *mq, UNUSED OSMesg msg, UNUSED s32 flag) {
 #endif
     return 0;
 }
-s32 osRecvMesg(UNUSED OSMesgQueue *mq, UNUSED OSMesg *msg, UNUSED s32 flag) {
+s32 osRecvMesg(UNUSED OSMesgQueue *mq, UNUSED OSMesg *msg, UNUSED s32 flag)
+{
 #if defined(VERSION_EU) || defined(VERSION_SH)
     if (mq->validCount == 0) {
         return -1;
@@ -68,42 +74,55 @@ s32 osRecvMesg(UNUSED OSMesgQueue *mq, UNUSED OSMesg *msg, UNUSED s32 flag) {
     return 0;
 }
 
-uintptr_t osVirtualToPhysical(void *addr) {
+uintptr_t osVirtualToPhysical(void *addr)
+{
     return (uintptr_t) addr;
 }
 
-void osCreateViManager(UNUSED OSPri pri) {
+void osCreateViManager(UNUSED OSPri pri)
+{
 }
-void osViSetMode(UNUSED OSViMode *mode) {
+void osViSetMode(UNUSED OSViMode *mode)
+{
 }
-void osViSetEvent(UNUSED OSMesgQueue *mq, UNUSED OSMesg msg, UNUSED u32 retraceCount) {
+void osViSetEvent(UNUSED OSMesgQueue *mq, UNUSED OSMesg msg, UNUSED u32 retraceCount)
+{
 }
-void osViBlack(UNUSED u8 active) {
+void osViBlack(UNUSED u8 active)
+{
 }
-void osViSetSpecialFeatures(UNUSED u32 func) {
+void osViSetSpecialFeatures(UNUSED u32 func)
+{
 }
-void osViSwapBuffer(UNUSED void *vaddr) {
+void osViSwapBuffer(UNUSED void *vaddr)
+{
 }
 
-OSTime osGetTime(void) {
+OSTime osGetTime(void)
+{
     return 0;
 }
 
-void osWritebackDCacheAll(void) {
+void osWritebackDCacheAll(void)
+{
 }
 
-void osWritebackDCache(UNUSED void *a, UNUSED size_t b) {
+void osWritebackDCache(UNUSED void *a, UNUSED size_t b)
+{
 }
 
-void osInvalDCache(UNUSED void *a, UNUSED size_t b) {
+void osInvalDCache(UNUSED void *a, UNUSED size_t b)
+{
 }
 
-u32 osGetCount(void) {
+u32 osGetCount(void)
+{
     static u32 counter;
     return counter++;
 }
 
-s32 osAiSetFrequency(u32 freq) {
+s32 osAiSetFrequency(u32 freq)
+{
     u32 a1;
     s32 a2;
     u32 D_8033491C;
@@ -128,11 +147,13 @@ s32 osAiSetFrequency(u32 freq) {
     return D_8033491C / (s32) a1;
 }
 
-s32 osEepromProbe(UNUSED OSMesgQueue *mq) {
+s32 osEepromProbe(UNUSED OSMesgQueue *mq)
+{
     return 1;
 }
 
-s32 osEepromLongRead(UNUSED OSMesgQueue *mq, u8 address, u8 *buffer, int nbytes) {
+s32 osEepromLongRead(UNUSED OSMesgQueue *mq, u8 address, u8 *buffer, int nbytes)
+{
     u8 content[512];
     s32 ret = -1;
 
@@ -172,7 +193,8 @@ s32 osEepromLongRead(UNUSED OSMesgQueue *mq, u8 address, u8 *buffer, int nbytes)
     return ret;
 }
 
-s32 osEepromLongWrite(UNUSED OSMesgQueue *mq, u8 address, u8 *buffer, int nbytes) {
+s32 osEepromLongWrite(UNUSED OSMesgQueue *mq, u8 address, u8 *buffer, int nbytes)
+{
     u8 content[512] = { 0 };
     if (address != 0 || nbytes != 512) {
         osEepromLongRead(mq, 0, content, 512);
@@ -201,23 +223,27 @@ s32 osEepromLongWrite(UNUSED OSMesgQueue *mq, u8 address, u8 *buffer, int nbytes
     return ret;
 }
 
-OSPiHandle *osCartRomInit(void) {
+OSPiHandle *osCartRomInit(void)
+{
     static OSPiHandle handle;
     return &handle;
 }
 
-OSPiHandle *osDriveRomInit(void) {
+OSPiHandle *osDriveRomInit(void)
+{
     static OSPiHandle handle;
     return &handle;
 }
 
-s32 osEPiStartDma(UNUSED OSPiHandle *pihandle, OSIoMesg *mb, UNUSED s32 direction) {
+s32 osEPiStartDma(UNUSED OSPiHandle *pihandle, OSIoMesg *mb, UNUSED s32 direction)
+{
     memcpy(mb->dramAddr, (const void *) mb->devAddr, mb->size);
     osSendMesg(mb->hdr.retQueue, mb, OS_MESG_NOBLOCK);
     return 0;
 }
 
-void bzero(void *s, size_t n) {
+void bzero(void *s, size_t n)
+{
     memset(s, 0, n);
 }
 
@@ -231,15 +257,19 @@ s8 gShowProfiler = 0;
 s8 gShowDebugText = 0;
 
 void set_vblank_handler(UNUSED s32 index, UNUSED struct VblankHandler *handler,
-                        UNUSED OSMesgQueue *queue, UNUSED OSMesg msg) {
+                        UNUSED OSMesgQueue *queue, UNUSED OSMesg msg)
+{
 }
 
-void dispatch_audio_sptask(UNUSED struct SPTask *spTask) {
+void dispatch_audio_sptask(UNUSED struct SPTask *spTask)
+{
 }
 
-void exec_display_list(UNUSED struct SPTask *spTask) {
+void exec_display_list(UNUSED struct SPTask *spTask)
+{
 }
 
-void bcopy(const void *src, void *dest, size_t n) {
+void bcopy(const void *src, void *dest, size_t n)
+{
     memmove(dest, src, n);
 }

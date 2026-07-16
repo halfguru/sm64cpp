@@ -13,7 +13,8 @@ namespace settings {
  * Checks if Mario stays in course after star grab.
  * Evaluates acts, level exceptions, and flag dependencies.
  */
-bool Settings::stay_in_level() {
+bool Settings::stay_in_level()
+{
     if (configStayInCourse == 3
         && ((gCurrActNum == 1 && gCollectedStar == 0
              && (gCurrLevelNum == LEVEL_BOB || gCurrLevelNum == LEVEL_WF || gCurrLevelNum == LEVEL_JRB
@@ -38,7 +39,8 @@ bool Settings::stay_in_level() {
 /**
  * Evaluates if the current level should restart to play the next mission.
  */
-bool Settings::restart_level_after_star() {
+bool Settings::restart_level_after_star()
+{
     return configSwitchToNextMission && gCurrLevelNum != LEVEL_BOWSER_1
            && gCurrLevelNum != LEVEL_BOWSER_2 && gCurrLevelNum != LEVEL_BOWSER_3
            && gCurrLevelNum != LEVEL_CASTLE && gCurrLevelNum != LEVEL_CASTLE_COURTYARD

@@ -23,6 +23,7 @@ find_package(OpenGL REQUIRED)
 # Definitions
 add_compile_definitions(
     _LANGUAGE_C
+    _LANGUAGE_C_PLUS_PLUS
     VERSION_US=1
     F3DEX_GBI_2E=1
     NON_MATCHING=1
@@ -351,8 +352,8 @@ src/engine/math_util.cpp
     src/pc/colors.cpp
     src/pc/configfile.cpp
     src/pc/controller/controller_emscripten_keyboard.c
-    src/pc/controller/controller_entry_point.c
-    src/pc/controller/controller_keyboard.c
+    src/pc/controller/controller_entry_point.cpp
+    src/pc/controller/controller_keyboard.cpp
     src/pc/controller/controller_recorded_tas.c
     src/pc/controller/controller_sdl2.c
     src/pc/controller/wup.c
@@ -363,7 +364,7 @@ src/engine/math_util.cpp
     src/pc/gfx/gfx_pc.c
     src/pc/gfx/gfx_sdl2.c
     src/pc/mixer.c
-    src/pc/pc_main.c
+    src/pc/pc_main.cpp
     src/pc/ultra_reimplementation.cpp
 )
 
@@ -380,6 +381,7 @@ target_link_libraries(sm64cpp
     GLEW::GLEW
     OpenGL::GL
     pthread
+    stdc++exp
 )
 
 # Allow duplicate symbols during transitional C to C++ build
@@ -408,9 +410,13 @@ add_executable(sm64cpp_test
     src/engine/math_util.cpp
     tests/test_math_util_stubs.cpp
     tests/test_math_util.cpp
+    src/pc/controller/controller_keyboard.cpp
+    tests/test_keyboard.cpp
+    src/pc/controller/controller_entry_point.cpp
+    tests/test_controller_entry.cpp
 )
 target_include_directories(sm64cpp_test PRIVATE src/pc include src)
-target_link_libraries(sm64cpp_test PRIVATE Catch2::Catch2WithMain pthread)
+target_link_libraries(sm64cpp_test PRIVATE Catch2::Catch2WithMain pthread stdc++exp)
 
 if (WIN32)
     target_link_options(sm64cpp_test PRIVATE -Wl,--allow-multiple-definition)

@@ -1,43 +1,75 @@
 #pragma once
 
+#include "game/settings.hpp"
 #include <filesystem>
 #include <string_view>
 #include <variant>
+#include <vector>
+
+/**
+ * @file configfile.hpp
+ * @brief Handles loading and saving configuration options for the PC port.
+ */
+
+namespace config {
 
 /**
  * @struct ConfigOption
  * @brief Represents a single configuration setting or section divider.
- *
- * ConfigOption maps an INI key string to a corresponding engine variable pointer.
- * It uses a type-safe std::variant to store the active pointer type.
- *
- * @var name   The key name as written in settings.ini (e.g. "fullscreen").
- * @var value  A variant holding either std::monostate (representing an INI section)
- *             or a pointer to a bool, unsigned int, int, or float variable.
- *
- * ### How to add a new option:
- * 1. Define the option variable in settings.h / settings.cpp (e.g. `extern bool configMyFeature;`).
- * 2. In `configfile.cpp`'s `options` array, add a designated initializer:
- *    @code
- *    { .name = "my_feature", .value = &configMyFeature },
- *    @endcode
- * 3. The parser and saver will automatically match the pointer type and format it correctly.
  */
-struct ConfigOption {
+struct ConfigOption
+{
     std::string_view name;
     std::variant<std::monostate, bool *, unsigned int *, int *, float *> value;
 };
 
 /**
- * @brief Loads configuration options from the specified file.
- * If the file does not exist, a default one will be created.
- * @param filename Path to the configuration INI file.
+ * @class ConfigManager
+ * @brief Manages loading and saving application configuration settings.
  */
-void configfile_load(const std::filesystem::path &filename);
+class ConfigManager
+{
+  public:
+    /**
+     * @brief Loads configuration options from the specified file.
+     * If the file does not exist, a default one will be created.
+     * @param filename Path to the configuration INI file.
+     * @param settings The Settings instance to populate.
+     */
+    static void load(const std::filesystem::path &filename, settings::Settings &settings);
+
+    /**
+     * @brief Saves the current configuration options to the specified file.
+     * @param filename Path to the configuration INI file.
+     * @param settings The Settings instance to read from.
+     */
+    static void save(const std::filesystem::path &filename, settings::Settings &settings);
+
+  private:
+    /**
+     * @brief Generates the option mapping vector for a given settings instance.
+     * @param settings The Settings instance to bind to.
+     * @return A vector of ConfigOption structures bound to the settings instance.
+     */
+    static std::vector<ConfigOption> get_options(settings::Settings &settings);
+};
+
+} // namespace config
 
 /**
- * @brief Saves the current configuration options to the specified file.
- * Creates any missing parent directories automatically.
+ * @brief Legacy bridge function to load configuration into the global settings singleton.
  * @param filename Path to the configuration INI file.
  */
-void configfile_save(const std::filesystem::path &filename);
+inline void configfile_load(const std::filesystem::path &filename)
+{
+    config::ConfigManager::load(filename, settings::Settings::get());
+}
+
+/**
+ * @brief Legacy bridge function to save configuration from the global settings singleton.
+ * @param filename Path to the configuration INI file.
+ */
+inline void configfile_save(const std::filesystem::path &filename)
+{
+    config::ConfigManager::save(filename, settings::Settings::get());
+}

@@ -158,9 +158,11 @@ inline unsigned int &configMouseWheelUp = settings::Settings::get().configMouseW
 inline unsigned int &configMouseWheelDown = settings::Settings::get().configMouseWheelDown;
 
 // Helper functions bridged to the Settings class members
-inline bool stay_in_level() {
+inline bool stay_in_level()
+{
     return settings::Settings::get().stay_in_level();
 }
-inline bool restart_level_after_star() {
+inline bool restart_level_after_star()
+{
     return settings::Settings::get().restart_level_after_star();
 }

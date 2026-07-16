@@ -2,7 +2,8 @@
 #include "pc/colors.hpp"
 #include "game/settings.h"
 
-TEST_CASE("Colors - set_colors Default Mario (Palette 1)", "[colors]") {
+TEST_CASE("Colors - set_colors Default Mario (Palette 1)", "[colors]")
+{
     configColorPalette = 1;
     set_colors();
 
@@ -35,7 +36,8 @@ TEST_CASE("Colors - set_colors Default Mario (Palette 1)", "[colors]") {
     REQUIRE(configColorShoes[0][2] == 14);
 }
 
-TEST_CASE("Colors - set_colors Mario Tweaked (Palette 2)", "[colors]") {
+TEST_CASE("Colors - set_colors Mario Tweaked (Palette 2)", "[colors]")
+{
     configColorPalette = 2;
     set_colors();
 
@@ -46,4 +48,18 @@ TEST_CASE("Colors - set_colors Mario Tweaked (Palette 2)", "[colors]") {
     REQUIRE(configColorCap[1][0] == 111);
     REQUIRE(configColorCap[1][1] == 0);
     REQUIRE(configColorCap[1][2] == 23);
+}
+
+TEST_CASE("Colors - ColorManager::apply_palette directly on Settings singleton", "[colors]")
+{
+    // Apply palette 1 directly to the singleton
+    colors::ColorManager::apply_palette(1, settings::Settings::get());
+
+    // Verify values on the singleton
+    REQUIRE(settings::Settings::get().configColorCap[0][0] == 255);
+    REQUIRE(settings::Settings::get().configColorCap[0][1] == 0);
+    REQUIRE(settings::Settings::get().configColorCap[0][2] == 0);
+    REQUIRE(settings::Settings::get().configColorCap[1][0] == 127);
+    REQUIRE(settings::Settings::get().configColorCap[1][1] == 0);
+    REQUIRE(settings::Settings::get().configColorCap[1][2] == 0);
 }

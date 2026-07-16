@@ -155,9 +155,11 @@ constexpr unsigned int DIK_MYCOMPUTER = 0xEB;   // My Computer
 constexpr unsigned int DIK_MAIL = 0xEC;         // Mail
 constexpr unsigned int DIK_MEDIASELECT = 0xED;  // Media Select
 
-class Settings {
+class Settings
+{
   public:
-    static Settings &get() {
+    static Settings &get()
+    {
         static Settings instance;
         return instance;
     }

@@ -1,12 +1,16 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <filesystem>
+#include <format>
+#include <print>
+
 #ifdef __linux__
+#include <unistd.h>
 #include <pwd.h>
 #elif defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
-#include <dirent.h>
 #endif
 
 #ifdef TARGET_WEB
@@ -15,7 +19,6 @@
 #endif
 
 #include "sm64.h"
-
 #include "game/memory.h"
 #include "audio/external.h"
 
@@ -28,7 +31,7 @@
 #include "audio/audio_sdl.h"
 #include "audio/audio_null.h"
 
-#include "controller/controller_keyboard.h"
+#include "controller/controller_keyboard.hpp"
 
 #include "game/hud.h"
 #include "configfile.hpp"
@@ -36,7 +39,6 @@
 #include "game/rumble_init.h"
 #include "game/settings.h"
 #include "colors.hpp"
-
 #include "compat.h"
 
 #define CONFIG_FILE "settings.ini"
@@ -53,8 +55,6 @@ extern void thread5_game_loop(void *arg);
 extern void create_next_audio_buffer(s16 *samples, u32 num_samples);
 void game_loop_one_iteration(void);
 
-#define printf
-
 #ifdef VERSION_EU
 #define SAMPLES_HIGH 656
 #define SAMPLES_LOW 640
@@ -63,7 +63,8 @@ void game_loop_one_iteration(void);
 #define SAMPLES_LOW 528
 #endif
 
-static void patch_interpolations(void) {
+static void patch_interpolations(void)
+{
     extern void mtx_patch_interpolated(void);
     extern void patch_screen_transition_interpolated(void);
     extern void patch_title_screen_scales(void);
@@ -78,15 +79,17 @@ static void patch_interpolations(void) {
     patch_interpolated_dialog();
     patch_interpolated_hud();
 
-    if (configStayInCourse)
+    if (configStayInCourse) {
         render_you_got_a_star(1);
+    }
 
     patch_interpolated_paintings();
     patch_interpolated_bubble_particles();
     patch_interpolated_snow_particles();
 }
 
-static void submit_audio_frame(void) {
+static void submit_audio_frame(void)
+{
     int samples_left = audio_api->buffered();
     u32 num_audio_samples =
         samples_left < audio_api->get_desired_buffered() ? SAMPLES_HIGH : SAMPLES_LOW;
@@ -99,7 +102,8 @@ static void submit_audio_frame(void) {
     audio_api->play((u8 *) audio_buffer, 2 * num_audio_samples * 4);
 }
 
-void produce_one_frame(void) {
+void produce_one_frame(void)
+{
     gfx_start_frame();
     game_loop_one_iteration();
 
@@ -122,14 +126,17 @@ void produce_one_frame(void) {
 }
 
 #ifdef TARGET_WEB
-static void em_main_loop(void) {
+static void em_main_loop(void)
+{
 }
 
-static void request_anim_frame(void (*func)(double time)) {
+static void request_anim_frame(void (*func)(double time))
+{
     EM_ASM(requestAnimationFrame(function(time) { dynCall("vd", $0, [time]); }), func);
 }
 
-static void on_anim_frame(double time) {
+static void on_anim_frame(double time)
+{
     static double target_time;
 
     time *= 0.03; // milliseconds to frame count (33.333 ms -> 1)
@@ -152,18 +159,21 @@ static void on_anim_frame(double time) {
 }
 #endif
 
-static void save_config(void) {
+static void save_config(void)
+{
     configfile_save(CONFIG_FILE);
 }
 
-static void on_fullscreen_changed(bool is_now_fullscreen) {
+static void on_fullscreen_changed(bool is_now_fullscreen)
+{
     configFullscreen = is_now_fullscreen;
 }
 
 // used primarily in gfx_pc.c
 const char *GFX_DIR_PATH = NULL;
 
-void main_func(const char *gfx_dir) {
+void main_func(const char *gfx_dir)
+{
     GFX_DIR_PATH = gfx_dir;
 #ifdef USE_SYSTEM_MALLOC
     main_pool_init();
@@ -174,34 +184,34 @@ void main_func(const char *gfx_dir) {
 #endif
     gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
 
+    std::filesystem::path working_dir;
+
 #if defined(_WIN32) || defined(_WIN64)
     // Set the working directory
-    char *workingdir = (char *) malloc(128);
-    strcpy(workingdir, getenv("LOCALAPPDATA"));
-    strcat(workingdir, "\\SM64Plus\\");
-    chdir(workingdir);
-#endif
-#ifdef TARGET_LINUX
-    // Set the working directory
-    char *workingdir = (char *) malloc(128);
-    const char *homedir;
-    if ((homedir = getenv("HOME")) == NULL) {
-        homedir = getpwuid(getuid())->pw_dir;
+    if (const char *localappdata = std::getenv("LOCALAPPDATA")) {
+        working_dir = std::filesystem::path(localappdata) / "SM64Plus";
     }
-    strcpy(workingdir, homedir);
-    strcat(workingdir, "/.config/SM64Plus/");
-    chdir(workingdir);
+#elif defined(TARGET_LINUX)
+    // Set the working directory
+    if (const char *homedir = std::getenv("HOME")) {
+        working_dir = std::filesystem::path(homedir) / ".config" / "SM64Plus";
+    } else {
+        if (struct passwd *pw = getpwuid(getuid())) {
+            working_dir = std::filesystem::path(pw->pw_dir) / ".config" / "SM64Plus";
+        }
+    }
 #endif
+
+    if (!working_dir.empty()) {
+        std::filesystem::create_directories(working_dir);
+        std::filesystem::current_path(working_dir);
+    }
 
     // Check if the textures exist
 #if defined(CUSTOM_TEXTURES) && (defined(_WIN32) || defined(_WIN64))
-    DIR *dir = opendir("gfx");
-    if (dir) {
-        closedir(dir);
-    } else {
-        fprintf(stdout, "Working directory set to: %s\n", workingdir);
-        fflush(stdout);
-        perror("opendir gfx failed");
+    if (!std::filesystem::exists("gfx")) {
+        std::print("Working directory set to: {}\n", working_dir.string());
+        std::perror("opendir gfx failed");
         MessageBox(
             0,
             "Failed to find the \"gfx\" folder in \"%LOCALAPPDATA%\\SM64Plus\". If you're using the "
@@ -209,23 +219,18 @@ void main_func(const char *gfx_dir) {
             "ERROR", MB_ICONERROR);
         exit(1);
     }
-
 #endif
 
-    fprintf(stdout, "[DEBUG] Loading config file...\n");
-    fflush(stdout);
+    std::print("[DEBUG] Loading config file...\n");
     configfile_load(CONFIG_FILE);
-    fprintf(stdout, "[DEBUG] Config file loaded successfully.\n");
-    fflush(stdout);
+    std::print("[DEBUG] Config file loaded successfully.\n");
 
     // Set the custom colors
-    fprintf(stdout, "[DEBUG] Setting colors...\n");
-    fflush(stdout);
+    std::print("[DEBUG] Setting colors...\n");
     set_colors();
-    fprintf(stdout, "[DEBUG] Colors set successfully.\n");
-    fflush(stdout);
+    std::print("[DEBUG] Colors set successfully.\n");
 
-    atexit(save_config);
+    std::atexit(save_config);
 
 #ifdef TARGET_WEB
     emscripten_set_main_loop(em_main_loop, 0, 0);
@@ -234,11 +239,9 @@ void main_func(const char *gfx_dir) {
 
     rendering_api = &gfx_opengl_api;
     wm_api = &gfx_sdl;
-    fprintf(stdout, "[DEBUG] Initializing gfx...\n");
-    fflush(stdout);
+    std::print("[DEBUG] Initializing gfx...\n");
     gfx_init(wm_api, rendering_api, gTitleString, configFullscreen);
-    fprintf(stdout, "[DEBUG] gfx initialized successfully.\n");
-    fflush(stdout);
+    std::print("[DEBUG] gfx initialized successfully.\n");
 
     wm_api->set_fullscreen_changed_callback(on_fullscreen_changed);
     wm_api->set_keyboard_callbacks(keyboard_on_key_down, keyboard_on_key_up, keyboard_on_all_keys_up,
@@ -268,9 +271,9 @@ void main_func(const char *gfx_dir) {
 }
 
 #if defined(_WIN32) || defined(_WIN64)
-#include <stdbool.h>
 int WINAPI WinMain(UNUSED HINSTANCE hInstance, UNUSED HINSTANCE hPrevInstance, UNUSED LPSTR pCmdLine,
-                   UNUSED int nCmdShow) {
+                   UNUSED int nCmdShow)
+{
     AttachConsole(ATTACH_PARENT_PROCESS);
 
     FILE *fp;
@@ -283,7 +286,8 @@ int WINAPI WinMain(UNUSED HINSTANCE hInstance, UNUSED HINSTANCE hPrevInstance, U
     return 0;
 }
 #else
-int main(int argc, const char *argv[]) {
+int main(int argc, const char *argv[])
+{
     main_func(argc > 1 ? argv[1] : NULL);
     return 0;
 }

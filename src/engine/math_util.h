@@ -71,7 +71,7 @@ void mtxf_to_mtx(Mtx *dest, Mat4 src);
 void mtxf_rotate_xy(Mtx *mtx, s16 angle);
 void get_pos_from_transform_mtx(Vec3f dest, Mat4 objMtx, Mat4 camMtx);
 void vec3f_get_dist_and_angle(Vec3f from, Vec3f to, f32 *dist, s16 *pitch, s16 *yaw);
-void vec3f_set_dist_and_angle(Vec3f from, Vec3f to, f32  dist, s16  pitch, s16  yaw);
+void vec3f_set_dist_and_angle(Vec3f from, Vec3f to, f32 dist, s16 pitch, s16 yaw);
 s32 approach_s32(s32 current, s32 target, s32 inc, s32 dec);
 f32 approach_f32(f32 current, f32 target, f32 inc, f32 dec);
 s16 atan2s(f32 y, f32 x);
@@ -87,8 +87,8 @@ enum class SplineState : s32 {
     Begin1 = 1, //!< first clamped segment (curve pinned to first point)
     Begin2 = 2, //!< second clamped segment
     Middle = 3, //!< interior segment (repeats)
-    End1   = 4, //!< first end-clamped segment
-    End2   = 5, //!< final segment; polling here signals completion
+    End1 = 4,   //!< first end-clamped segment
+    End2 = 5,   //!< final segment; polling here signals completion
 };
 
 /**
@@ -105,16 +105,17 @@ void spline_get_weights_for_state(Vec4f result, f32 t, SplineState state);
  * (gSplineKeyframe / gSplineKeyframeFraction / gSplineState) so the spline
  * animation has no hidden mutable file-scope state.
  */
-class SplinePlayer {
-public:
+class SplinePlayer
+{
+  public:
     /// @brief Begin animating the given keyframe array (s, x, y, z) vectors.
     void init(Vec4s *keyFrames);
     /// @brief Poll the next interpolated point. @return TRUE once finished.
     s32 poll(Vec3f result);
 
-private:
-    Vec4s *mKeyframe = nullptr;   //!< current keyframe window start
-    f32 mFraction = 0.0f;         //!< interpolation parameter accumulator
+  private:
+    Vec4s *mKeyframe = nullptr; //!< current keyframe window start
+    f32 mFraction = 0.0f;       //!< interpolation parameter accumulator
     SplineState mState = SplineState::Begin1;
 };
 
