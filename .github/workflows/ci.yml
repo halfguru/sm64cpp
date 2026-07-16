@@ -21,21 +21,22 @@ jobs:
           update: true
           install: >-
             mingw-w64-x86_64-binutils
+            mingw-w64-x86_64-clang
             mingw-w64-x86_64-SDL2
             mingw-w64-x86_64-glew
             mingw-w64-x86_64-ninja
 
       - name: Configure CMake
-        shell: pwsh
+        shell: msys2 {0}
         run: |
           cmake --preset clang-ninja
 
       - name: Build Project
-        shell: pwsh
+        shell: msys2 {0}
         run: |
           cmake --build build/clang-ninja
 
       - name: Run Unit Tests
-        shell: pwsh
+        shell: msys2 {0}
         run: |
           ./build/clang-ninja/sm64cpp_test.exe
