@@ -21,6 +21,22 @@
         "CMAKE_EXE_LINKER_FLAGS": "-target x86_64-w64-windows-gnu -fuse-ld=lld",
         "CMAKE_BUILD_TYPE": "Debug"
       }
+    },
+    {
+      "name": "clang-ninja-release",
+      "displayName": "Clang++ (MinGW, Ninja, Release)",
+      "description": "Configure Release build using standalone Clang++ in MinGW/GNU mode with Ninja",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/clang-ninja-release",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "C:/Program Files/LLVM/bin/clang.exe",
+        "CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/bin/clang++.exe",
+        "CMAKE_RC_COMPILER": "C:/msys64/mingw64/bin/windres.exe",
+        "CMAKE_CXX_FLAGS": "-target x86_64-w64-windows-gnu",
+        "CMAKE_C_FLAGS": "-target x86_64-w64-windows-gnu",
+        "CMAKE_EXE_LINKER_FLAGS": "-target x86_64-w64-windows-gnu -fuse-ld=lld",
+        "CMAKE_BUILD_TYPE": "Release"
+      }
     }
   ],
   "buildPresets": [
@@ -28,6 +44,11 @@
       "name": "clang-ninja",
       "displayName": "Clang Ninja Build",
       "configurePreset": "clang-ninja"
+    },
+    {
+      "name": "clang-ninja-release",
+      "displayName": "Clang Ninja Release Build",
+      "configurePreset": "clang-ninja-release"
     }
   ]
 }
