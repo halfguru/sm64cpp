@@ -1,5 +1,11 @@
-#ifndef MATH_UTIL_H
-#define MATH_UTIL_H
+/**
+ * @file math_util.h
+ * @brief Engine math utilities: 3D vector helpers, 4x4 matrix construction,
+ *        approach/clamp helpers, fixed-point angle math, and a cubic B-spline
+ *        animation player.
+ */
+
+#pragma once
 
 #include <PR/ultratypes.h>
 
@@ -26,6 +32,9 @@ extern f32 gCosineTable[];
 
 #define sins(x) gSineTable[(u16) (x) >> 4]
 #define coss(x) gCosineTable[(u16) (x) >> 4]
+
+// NOTE: min/max/sqr are intentionally kept as macros for now: they are used
+// across 16 translation units and replacing them is a separate, scoped change.
 
 #define min(a, b) ((a) <= (b) ? (a) : (b))
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -67,8 +76,48 @@ s32 approach_s32(s32 current, s32 target, s32 inc, s32 dec);
 f32 approach_f32(f32 current, f32 target, f32 inc, f32 dec);
 s16 atan2s(f32 y, f32 x);
 f32 atan2f(f32 a, f32 b);
-void spline_get_weights(Vec4f result, f32 t, UNUSED s32 c);
-void anim_spline_init(Vec4s *keyFrames);
-s32 anim_spline_poll(Vec3f result);
 
-#endif // MATH_UTIL_H
+/**
+ * @brief Discrete states of the clamped cubic B-spline sampler.
+ *
+ * Wraps the previous CURVE_BEGIN_1 .. CURVE_END_2 integer constants in a
+ * scoped enum so they no longer leak into the global macro namespace.
+ */
+enum class SplineState : s32 {
+    Begin1 = 1, //!< first clamped segment (curve pinned to first point)
+    Begin2 = 2, //!< second clamped segment
+    Middle = 3, //!< interior segment (repeats)
+    End1   = 4, //!< first end-clamped segment
+    End2   = 5, //!< final segment; polling here signals completion
+};
+
+/**
+ * @brief Compute the 4 B-spline basis weights for parameter t at the current
+ *        spline state. Internal helper used by SplinePlayer; not part of the
+ *        public API.
+ */
+void spline_get_weights_for_state(Vec4f result, f32 t, SplineState state);
+
+/**
+ * @brief Stateful player that walks a cubic B-spline through keyframes.
+ *
+ * Encapsulates the globals that previously lived at file scope
+ * (gSplineKeyframe / gSplineKeyframeFraction / gSplineState) so the spline
+ * animation has no hidden mutable file-scope state.
+ */
+class SplinePlayer {
+public:
+    /// @brief Begin animating the given keyframe array (s, x, y, z) vectors.
+    void init(Vec4s *keyFrames);
+    /// @brief Poll the next interpolated point. @return TRUE once finished.
+    s32 poll(Vec3f result);
+
+private:
+    Vec4s *mKeyframe = nullptr;   //!< current keyframe window start
+    f32 mFraction = 0.0f;         //!< interpolation parameter accumulator
+    SplineState mState = SplineState::Begin1;
+};
+
+void anim_spline_init(Vec4s *keyFrames);
+
+s32 anim_spline_poll(Vec3f result);

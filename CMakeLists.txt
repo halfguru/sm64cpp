@@ -264,7 +264,7 @@ set(ENGINE_SOURCES
     src/engine/graph_node.c
     src/engine/graph_node_manager.c
     src/engine/level_script.c
-    src/engine/math_util.c
+src/engine/math_util.cpp
     src/engine/surface_collision.c
     src/engine/surface_load.c
     src/game/area.c
@@ -405,6 +405,9 @@ add_executable(sm64cpp_test
     tests/test_colors.cpp
     src/pc/ultra_reimplementation.cpp
     tests/test_ultra.cpp
+    src/engine/math_util.cpp
+    tests/test_math_util_stubs.cpp
+    tests/test_math_util.cpp
 )
 target_include_directories(sm64cpp_test PRIVATE src/pc include src)
 target_link_libraries(sm64cpp_test PRIVATE Catch2::Catch2WithMain pthread)
