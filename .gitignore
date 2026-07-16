@@ -85,6 +85,6 @@ sm64config.txt
 .idea/vcs.xml
 
 # Project build & reference folders
-build_cmake/
+build/
 src/generated/
 /references/

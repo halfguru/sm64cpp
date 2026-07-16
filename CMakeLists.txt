@@ -23,6 +23,7 @@ find_package(OpenGL REQUIRED)
 # Definitions
 add_compile_definitions(
     _LANGUAGE_C
+    _LANGUAGE_C_PLUS_PLUS
     VERSION_US=1
     F3DEX_GBI_2E=1
     NON_MATCHING=1
@@ -264,7 +265,7 @@ set(ENGINE_SOURCES
     src/engine/graph_node.c
     src/engine/graph_node_manager.c
     src/engine/level_script.c
-    src/engine/math_util.c
+src/engine/math_util.cpp
     src/engine/surface_collision.c
     src/engine/surface_load.c
     src/game/area.c
@@ -308,7 +309,7 @@ set(ENGINE_SOURCES
     src/game/rumble_init.c
     src/game/save_file.c
     src/game/screen_transition.c
-    src/game/settings.c
+    src/game/settings.cpp
     src/game/shadow.c
     src/game/skybox.c
     src/game/sound_init.c
@@ -348,11 +349,11 @@ set(ENGINE_SOURCES
     src/menu/title_screen.c
     src/pc/audio/audio_null.c
     src/pc/audio/audio_sdl2.c
-    src/pc/colors.c
-    src/pc/configfile.c
+    src/pc/colors.cpp
+    src/pc/configfile.cpp
     src/pc/controller/controller_emscripten_keyboard.c
-    src/pc/controller/controller_entry_point.c
-    src/pc/controller/controller_keyboard.c
+    src/pc/controller/controller_entry_point.cpp
+    src/pc/controller/controller_keyboard.cpp
     src/pc/controller/controller_recorded_tas.c
     src/pc/controller/controller_sdl2.c
     src/pc/controller/wup.c
@@ -363,29 +364,65 @@ set(ENGINE_SOURCES
     src/pc/gfx/gfx_pc.c
     src/pc/gfx/gfx_sdl2.c
     src/pc/mixer.c
-    src/pc/pc_main.c
-    src/pc/ultra_reimplementation.c
+    src/pc/pc_main.cpp
+    src/pc/ultra_reimplementation.cpp
 )
 
 # Mark all sources as C++
 set_source_files_properties(${ENGINE_SOURCES} ${DATA_SOURCES} PROPERTIES LANGUAGE CXX)
 
 # Executable target
-add_executable(sm64cpp ${DATA_SOURCES} ${ENGINE_SOURCES} ${RESOURCES})
+if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/generated/assets/demo_data.c")
+    add_executable(sm64cpp ${DATA_SOURCES} ${ENGINE_SOURCES} ${RESOURCES})
 
-# Link libraries
-target_link_libraries(sm64cpp
-    PRIVATE
-    SDL2::SDL2
-    GLEW::GLEW
-    OpenGL::GL
-    pthread
-)
+    # Link libraries
+    target_link_libraries(sm64cpp
+        PRIVATE
+        SDL2::SDL2
+        GLEW::GLEW
+        OpenGL::GL
+        pthread
+        stdc++exp
+    )
 
-# Allow duplicate symbols during transitional C to C++ build
-if (WIN32)
-    target_link_options(sm64cpp PRIVATE -Wl,--allow-multiple-definition)
+    # Allow duplicate symbols during transitional C to C++ build
+    if (WIN32)
+        target_link_options(sm64cpp PRIVATE -Wl,--allow-multiple-definition)
+    endif()
+else()
+    message(STATUS "Assets not generated (baserom not extracted). Skipping target 'sm64cpp'.")
 endif()
+# Catch2 testing
+include(FetchContent)
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v3.15.2
+)
+FetchContent_MakeAvailable(Catch2)
 
-# Allow duplicate symbols during transitional C to C++ build
+enable_testing()
+
+add_executable(sm64cpp_test
+    tests/stubs_settings.cpp
+    src/pc/configfile.cpp
+    tests/test_configfile.cpp
+    src/pc/colors.cpp
+    tests/test_colors.cpp
+    src/pc/ultra_reimplementation.cpp
+    tests/test_ultra.cpp
+    src/engine/math_util.cpp
+    tests/test_math_util_stubs.cpp
+    tests/test_math_util.cpp
+    src/pc/controller/controller_keyboard.cpp
+    tests/test_keyboard.cpp
+    src/pc/controller/controller_entry_point.cpp
+    tests/test_controller_entry.cpp
+)
+target_include_directories(sm64cpp_test PRIVATE src/pc include src)
+target_link_libraries(sm64cpp_test PRIVATE Catch2::Catch2WithMain pthread stdc++exp)
+
+if (WIN32)
+    target_link_options(sm64cpp_test PRIVATE -Wl,--allow-multiple-definition)
+endif()
 
