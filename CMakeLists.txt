@@ -5,7 +5,7 @@ set(CMAKE_C_COMPILER_TARGET x86_64-w64-windows-gnu)
 project(sm64cpp LANGUAGES C CXX)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Configure compiler-specific options
@@ -308,7 +308,7 @@ set(ENGINE_SOURCES
     src/game/rumble_init.c
     src/game/save_file.c
     src/game/screen_transition.c
-    src/game/settings.c
+    src/game/settings.cpp
     src/game/shadow.c
     src/game/skybox.c
     src/game/sound_init.c
@@ -348,8 +348,8 @@ set(ENGINE_SOURCES
     src/menu/title_screen.c
     src/pc/audio/audio_null.c
     src/pc/audio/audio_sdl2.c
-    src/pc/colors.c
-    src/pc/configfile.c
+    src/pc/colors.cpp
+    src/pc/configfile.cpp
     src/pc/controller/controller_emscripten_keyboard.c
     src/pc/controller/controller_entry_point.c
     src/pc/controller/controller_keyboard.c
@@ -364,7 +364,7 @@ set(ENGINE_SOURCES
     src/pc/gfx/gfx_sdl2.c
     src/pc/mixer.c
     src/pc/pc_main.c
-    src/pc/ultra_reimplementation.c
+    src/pc/ultra_reimplementation.cpp
 )
 
 # Mark all sources as C++
@@ -386,6 +386,30 @@ target_link_libraries(sm64cpp
 if (WIN32)
     target_link_options(sm64cpp PRIVATE -Wl,--allow-multiple-definition)
 endif()
+# Catch2 testing
+include(FetchContent)
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v3.15.2
+)
+FetchContent_MakeAvailable(Catch2)
 
-# Allow duplicate symbols during transitional C to C++ build
+enable_testing()
+
+add_executable(sm64cpp_test
+    tests/stubs_settings.cpp
+    src/pc/configfile.cpp
+    tests/test_configfile.cpp
+    src/pc/colors.cpp
+    tests/test_colors.cpp
+    src/pc/ultra_reimplementation.cpp
+    tests/test_ultra.cpp
+)
+target_include_directories(sm64cpp_test PRIVATE src/pc include src)
+target_link_libraries(sm64cpp_test PRIVATE Catch2::Catch2WithMain pthread)
+
+if (WIN32)
+    target_link_options(sm64cpp_test PRIVATE -Wl,--allow-multiple-definition)
+endif()
 

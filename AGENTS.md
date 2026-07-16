@@ -6,13 +6,13 @@ This file contains the guidelines, build commands, and refactoring roadmap for A
 * **Goal:** Port the C-based PC port of Super Mario 64 (`sm64plus`) to modern C++.
 * **Base Codebase:** Unlicensed SM64 PC port (forked at `https://github.com/halfguru/sm64cpp`).
 * **Graphics/Windowing Backend:** SDL2 + OpenGL + GLEW.
-* **Build System:** Makefile (compiled under MinGW64 GCC/G++).
+* **Build System:** CMake (configured with Ninja or Unix Makefiles).
 
 ---
 
 ## 2. Environment & Tools
-* **Shell:** Windows PowerShell (pwsh) for general tasks, and **MSYS2 Bash** for running compilation.
-* **Compilers:** MinGW64 `gcc` / `g++`.
+* **Shell:** Windows PowerShell (pwsh) or command prompt.
+* **Compilers:** MinGW64 `g++` / `clang++`.
 * **Python Interpreter:** Windows `python.exe` (mapped from `C:\Program Files\Python314\python.exe`).
 * **Game ROM:** US version named `baserom.us.z64` in the workspace root (used for asset extraction).
 
@@ -20,29 +20,29 @@ This file contains the guidelines, build commands, and refactoring roadmap for A
 
 ## 3. Standard Build & Run Commands
 
-All make-based compilation commands **must** be executed through the MSYS2 Bash wrapper to resolve Unix utilities like `sh`, `find`, and `printf`.
+CMake commands can be run directly from Windows PowerShell (pwsh).
 
 ### Build Commands
 * **Clean Build Output:**
   ```powershell
-  C:\msys64\usr\bin\bash.exe -c "export PATH=/mingw64/bin:/usr/bin:$PATH && mingw32-make clean"
+  cmake --build build_cmake --target clean
   ```
-* **Compile PC Executable (C baseline):**
+* **Compile PC Executable (CMake build):**
   ```powershell
-  C:\msys64\usr\bin\bash.exe -c "export PATH=/mingw64/bin:/usr/bin:$PATH && mingw32-make -j4 PYTHON=python"
+  cmake --build build_cmake
   ```
 
 ### Run Command
 Launch the compiled standalone executable in the background (preventing PowerShell block):
 ```powershell
-Start-Process -FilePath "build\us_pc\sm64.us.exe" -WorkingDirectory "build\us_pc"
+Start-Process -FilePath "build_cmake\sm64cpp.exe" -WorkingDirectory "build_cmake"
 ```
 
 ### Game Asset Path
 The game standalone executable reads assets from `%LOCALAPPDATA%\SM64Plus\gfx`. After compiling or updating assets, make sure they are copied:
 ```powershell
 New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\SM64Plus"
-Copy-Item -Path "build\us_pc\gfx" -Destination "$env:LOCALAPPDATA\SM64Plus\" -Recurse -Force
+Copy-Item -Path "build_cmake\gfx" -Destination "$env:LOCALAPPDATA\SM64Plus\" -Recurse -Force
 ```
 
 ---
@@ -55,3 +55,22 @@ Copy-Item -Path "build\us_pc\gfx" -Destination "$env:LOCALAPPDATA\SM64Plus\" -Re
    * Wrap standard library headers or declare C-linkage (`extern "C"`) where necessary.
    * Check for identifiers naming conflicts with C++ keywords (e.g. `class`, `template`, `private`, `using`).
 3. **Object-Oriented Refactoring:** Convert core engine components (such as Mario's action state machine, actors, levels, and renderer) into modern C++ classes.
+
+---
+
+## 5. Porting & Testing Workflow (Test-Driven Transition)
+To ensure that behavior does not change or break during porting/refactoring to C++23, follow this strict transition workflow:
+1. **Establish a Unit Test Baseline:** Before modifying a C file or refactoring code, write/extend Catch2 unit tests to cover the current behavior.
+2. **Verify the Old Implementation:** Compile and run the unit test suite against the original C implementation, verifying that all tests pass.
+3. **Refactor / Port to C++23:** Modernize the file to C++23.
+4. **Verify the New Implementation:** Compile and execute the exact same Catch2 tests against the new C++23 implementation to guarantee 100% behavioral parity.
+5. **Modern Porting Style & Documentation:**
+   * **Modernize Logic:** Eliminate C preprocessor macros where possible, replacing them with modern, type-safe C++ equivalents (e.g., `constexpr` values, `inline` helper functions, `std::size`, standard templates, and namespaces).
+     * Avoid preprocessor `#define` macros for constants and calculations. Use type-safe `constexpr` values, inline helper functions, or scoped enum classes (`enum class`) instead to preserve scoping and type checking.
+   * **Encapsulate Global State:** Avoid raw `extern` global variables. Encapsulate configurations, states, and subsystems inside modern C++ classes/structures (e.g. singletons, monostates, or dependency-injected objects) to ensure namespace safety and initialization order correctness. For legacy C file compatibility, use bridging patterns (like C++17 `inline` reference aliases inside a bridge header) rather than cluttering the global namespace.
+     * Prefer **non-static member initializers (NSDMI)** directly in the class header declaration over constructor initialization lists where possible to make default states self-documenting and prevent uninitialized member variables.
+   * **Mandatory Documentation:** Every header (`.hpp`) and source file (`.cpp`) being ported must be fully documented:
+     * Add descriptive file-level Doxygen comments (`@file`, `@brief`).
+     * Document structures, classes, and public functions (`@struct`, `@class`, `@brief`, `@param`, `@return`).
+     * Include clear inline comments explaining complex, type-safe operations (such as visitor patterns, templates, or lambdas).
+   * **Clang-Tidy Validation:** Run `clang-tidy` checks on all modified or newly created files, and resolve all reported warnings to ensure static analysis compliance and high code quality.

@@ -31,11 +31,11 @@
 #include "controller/controller_keyboard.h"
 
 #include "game/hud.h"
-#include "configfile.h"
+#include "configfile.hpp"
 
 #include "game/rumble_init.h"
 #include "game/settings.h"
-#include "colors.h"
+#include "colors.hpp"
 
 #include "compat.h"
 
@@ -88,14 +88,15 @@ static void patch_interpolations(void) {
 
 static void submit_audio_frame(void) {
     int samples_left = audio_api->buffered();
-    u32 num_audio_samples = samples_left < audio_api->get_desired_buffered() ? SAMPLES_HIGH : SAMPLES_LOW;
+    u32 num_audio_samples =
+        samples_left < audio_api->get_desired_buffered() ? SAMPLES_HIGH : SAMPLES_LOW;
     s16 audio_buffer[SAMPLES_HIGH * 2 * 2];
 
     for (int i = 0; i < 2; i++) {
         create_next_audio_buffer(audio_buffer + i * (num_audio_samples * 2), num_audio_samples);
     }
 
-    audio_api->play((u8 *)audio_buffer, 2 * num_audio_samples * 4);
+    audio_api->play((u8 *) audio_buffer, 2 * num_audio_samples * 4);
 }
 
 void produce_one_frame(void) {
@@ -105,16 +106,15 @@ void produce_one_frame(void) {
 #if ENABLE_RUMBLE
     thread6_rumble_loop(NULL);
 #endif
-    
+
     submit_audio_frame();
-    
+
     gfx_end_frame();
-    
+
     gfx_start_frame();
     if (configFrameRate) {
         patch_interpolations();
-    }
-    else if (configStayInCourse) {
+    } else if (configStayInCourse) {
         render_you_got_a_star(3);
     }
     gfx_run((Gfx *) gGfxSPTask->task.t.data_ptr);
@@ -126,9 +126,7 @@ static void em_main_loop(void) {
 }
 
 static void request_anim_frame(void (*func)(double time)) {
-    EM_ASM(requestAnimationFrame(function(time) {
-        dynCall("vd", $0, [time]);
-    }), func);
+    EM_ASM(requestAnimationFrame(function(time) { dynCall("vd", $0, [time]); }), func);
 }
 
 static void on_anim_frame(double time) {
@@ -163,15 +161,15 @@ static void on_fullscreen_changed(bool is_now_fullscreen) {
 }
 
 // used primarily in gfx_pc.c
-const char* GFX_DIR_PATH = NULL;
+const char *GFX_DIR_PATH = NULL;
 
-void main_func(const char* gfx_dir) {
+void main_func(const char *gfx_dir) {
     GFX_DIR_PATH = gfx_dir;
 #ifdef USE_SYSTEM_MALLOC
     main_pool_init();
     gGfxAllocOnlyPool = alloc_only_pool_init();
 #else
-    static u64 pool[0x165000/8 / 4 * sizeof(void *)];
+    static u64 pool[0x165000 / 8 / 4 * sizeof(void *)];
     main_pool_init(pool, pool + sizeof(pool) / sizeof(pool[0]));
 #endif
     gEffectsMemoryPool = mem_pool_init(0x4000, MEMORY_POOL_LEFT);
@@ -197,24 +195,35 @@ void main_func(const char* gfx_dir) {
 
     // Check if the textures exist
 #if defined(CUSTOM_TEXTURES) && (defined(_WIN32) || defined(_WIN64))
-    DIR* dir = opendir("gfx");
+    DIR *dir = opendir("gfx");
     if (dir) {
         closedir(dir);
-    } 
-    else {
+    } else {
         fprintf(stdout, "Working directory set to: %s\n", workingdir);
         fflush(stdout);
         perror("opendir gfx failed");
-        MessageBox(0, "Failed to find the \"gfx\" folder in \"%LOCALAPPDATA%\\SM64Plus\". If you're using the launcher, try reinstalling the game. If not, copy the folder from \"build\\us_pc\".", "ERROR", MB_ICONERROR);
+        MessageBox(
+            0,
+            "Failed to find the \"gfx\" folder in \"%LOCALAPPDATA%\\SM64Plus\". If you're using the "
+            "launcher, try reinstalling the game. If not, copy the folder from \"build\\us_pc\".",
+            "ERROR", MB_ICONERROR);
         exit(1);
     }
 
 #endif
 
+    fprintf(stdout, "[DEBUG] Loading config file...\n");
+    fflush(stdout);
     configfile_load(CONFIG_FILE);
+    fprintf(stdout, "[DEBUG] Config file loaded successfully.\n");
+    fflush(stdout);
 
     // Set the custom colors
+    fprintf(stdout, "[DEBUG] Setting colors...\n");
+    fflush(stdout);
     set_colors();
+    fprintf(stdout, "[DEBUG] Colors set successfully.\n");
+    fflush(stdout);
 
     atexit(save_config);
 
@@ -225,15 +234,19 @@ void main_func(const char* gfx_dir) {
 
     rendering_api = &gfx_opengl_api;
     wm_api = &gfx_sdl;
+    fprintf(stdout, "[DEBUG] Initializing gfx...\n");
+    fflush(stdout);
     gfx_init(wm_api, rendering_api, gTitleString, configFullscreen);
-    
+    fprintf(stdout, "[DEBUG] gfx initialized successfully.\n");
+    fflush(stdout);
+
     wm_api->set_fullscreen_changed_callback(on_fullscreen_changed);
-    wm_api->set_keyboard_callbacks(keyboard_on_key_down, keyboard_on_key_up, keyboard_on_all_keys_up, keyboard_on_mouse_move, keyboard_on_mouse_press);
-    
+    wm_api->set_keyboard_callbacks(keyboard_on_key_down, keyboard_on_key_up, keyboard_on_all_keys_up,
+                                   keyboard_on_mouse_move, keyboard_on_mouse_press);
+
     if (audio_sdl.init()) {
         audio_api = &audio_sdl;
-    }
-    else {
+    } else {
         audio_api = &audio_null;
     }
 
@@ -256,7 +269,8 @@ void main_func(const char* gfx_dir) {
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <stdbool.h>
-int WINAPI WinMain(UNUSED HINSTANCE hInstance, UNUSED HINSTANCE hPrevInstance, UNUSED LPSTR pCmdLine, UNUSED int nCmdShow) {
+int WINAPI WinMain(UNUSED HINSTANCE hInstance, UNUSED HINSTANCE hPrevInstance, UNUSED LPSTR pCmdLine,
+                   UNUSED int nCmdShow) {
     AttachConsole(ATTACH_PARENT_PROCESS);
 
     FILE *fp;
@@ -265,7 +279,7 @@ int WINAPI WinMain(UNUSED HINSTANCE hInstance, UNUSED HINSTANCE hPrevInstance, U
     freopen_s(&fp, "CONIN$", "r", stdin);
 
     main_func(NULL);
-    
+
     return 0;
 }
 #else
